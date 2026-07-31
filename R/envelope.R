@@ -72,7 +72,20 @@ envelope <- function(
   error = NULL,
   detail = NULL
 ) {
-  status <- match.arg(status, STATUS_LEVELS)
+  # Exact matching, not match.arg(). match.arg() partial-matches, so a typo like
+  # envelope("t") silently becomes a timeout envelope and envelope("sk") a
+  # skipped one. A status is a contract, not a convenience argument.
+  if (
+    length(status) != 1L ||
+      !is.character(status) ||
+      !(status %in% STATUS_LEVELS)
+  ) {
+    stop(
+      "`status` must be one of: ",
+      paste(STATUS_LEVELS, collapse = ", "),
+      call. = FALSE
+    )
+  }
   list(
     ok = identical(status, "ok"),
     status = status,
@@ -184,17 +197,24 @@ status_error <- function(
 #' when the failure is genuinely not actionable, not to avoid reading the
 #' envelope.
 #'
+#' Returns the body for `ok` **and for `stale`**. A stale envelope carries real
+#' data that is merely past its freshness window, so returning `NULL` for it
+#' would throw away the one thing the caller asked for. Branch on `res$status`
+#' if the difference matters. Note that `res$ok` is `FALSE` for `stale`, which
+#' is what keeps [cached()] from storing it.
+#'
 #' @param res An envelope from [perform()] or one of the convenience wrappers.
 #'
-#' @return `res$data` when the call succeeded, otherwise `NULL`.
+#' @return `res$data` when the status is `ok` or `stale`, otherwise `NULL`.
 #'
 #' @examples
 #' body_or_null(status_ok(data = list(n = 1)))
+#' body_or_null(status_stale(data = list(n = 1)))
 #' body_or_null(status_error(source = "gnomAD"))
 #'
 #' @export
 body_or_null <- function(res) {
-  if (isTRUE(res$ok)) res$data else NULL
+  if (isTRUE(res$status %in% c("ok", "stale"))) res$data else NULL
 }
 
 #' Classify an HTTP status code onto the status enum

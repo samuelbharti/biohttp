@@ -10,7 +10,7 @@ body_or_null(res)
 \item{res}{An envelope from \code{\link[=perform]{perform()}} or one of the convenience wrappers.}
 }
 \value{
-\code{res$data} when the call succeeded, otherwise \code{NULL}.
+\code{res$data} when the status is \code{ok} or \code{stale}, otherwise \code{NULL}.
 }
 \description{
 For a client that wants the body and does not care why a call failed. Every
@@ -18,8 +18,16 @@ other field is still there for a client that does care, so reach for this
 when the failure is genuinely not actionable, not to avoid reading the
 envelope.
 }
+\details{
+Returns the body for \code{ok} \strong{and for \code{stale}}. A stale envelope carries real
+data that is merely past its freshness window, so returning \code{NULL} for it
+would throw away the one thing the caller asked for. Branch on \code{res$status}
+if the difference matters. Note that \code{res$ok} is \code{FALSE} for \code{stale}, which
+is what keeps \code{\link[=cached]{cached()}} from storing it.
+}
 \examples{
 body_or_null(status_ok(data = list(n = 1)))
+body_or_null(status_stale(data = list(n = 1)))
 body_or_null(status_error(source = "gnomAD"))
 
 }

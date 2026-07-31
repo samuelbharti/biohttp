@@ -7,6 +7,18 @@ test_that("ok is derived from status and cannot disagree with it", {
 
 test_that("envelope rejects a status outside the enum", {
   expect_error(envelope("broken", source = "S"))
+  expect_error(envelope(NA_character_))
+  expect_error(envelope(character(0)))
+  expect_error(envelope(c("ok", "error")))
+})
+
+test_that("envelope does not partial-match a status", {
+  # match.arg() would accept every one of these: "t" becomes timeout, "sk"
+  # becomes skipped, "err" becomes error. A status is a contract, so a typo has
+  # to fail loudly rather than quietly produce a different outcome.
+  for (typo in c("t", "sk", "err", "no_d", "rate")) {
+    expect_error(envelope(typo), "must be one of")
+  }
 })
 
 test_that("an envelope carries the user message apart from the log detail", {
@@ -62,9 +74,22 @@ test_that("classify_condition separates a timeout from everything else", {
   )
 })
 
-test_that("body_or_null gives the body only on success", {
+test_that("body_or_null gives the body for ok and for stale", {
   expect_identical(body_or_null(status_ok(data = list(n = 1)))$n, 1)
+
+  # A stale envelope carries real data that is merely past its freshness
+  # window. Returning NULL for it would throw away the one thing the caller
+  # asked for.
+  expect_identical(body_or_null(status_stale(data = list(n = 2)))$n, 2)
+
   expect_null(body_or_null(status_error()))
   expect_null(body_or_null(status_no_data()))
   expect_null(body_or_null(status_skipped()))
+  expect_null(body_or_null(status_timeout()))
+  expect_null(body_or_null(status_rate_limited()))
+})
+
+test_that("stale is still never cached, despite carrying a body", {
+  # ok stays FALSE for stale, which is what keeps cached() from storing it.
+  expect_false(status_stale(data = list(n = 1))$ok)
 })
