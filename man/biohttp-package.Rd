@@ -6,7 +6,7 @@
 \alias{biohttp-package}
 \title{biohttp: Normalized HTTP Transport with Circuit Breaking and Caching}
 \description{
-Web service calls return a normalized result value instead of raising a condition, so a caller branches on data rather than on an error handler. Transport failure, a non-success status code, and an unreadable response body are reported as three distinct outcomes. Per-host circuit breaking, retry with a transient-failure predicate, optional throttling, redacted request headers, and a success-only cache come as defaults. Service specific knowledge is left to the client packages built on top.
+Web service calls return a normalized result value instead of raising a condition, so a caller branches on data rather than on an error handler. Transport failure, a non-success status code, and an unreadable response body are reported as three distinct outcomes. Per-host circuit breaking, retry with a transient-failure predicate, optional throttling, redacted request headers, and a success-only cache come as defaults. Many questions to one source can be asked as a single batch, where only the entries the cache is missing reach the network. Service specific knowledge is left to the client packages built on top.
 }
 \details{
 Start at \code{\link[=get_json]{get_json()}}, \code{\link[=post_json]{post_json()}}, or \code{\link[=get_text]{get_text()}} for a call that
