@@ -50,6 +50,17 @@
 #'
 #' @export
 perform <- function(req, source = "API") {
+  perform_with(req, source, function(resp) {
+    httr2::resp_body_json(resp, check_type = FALSE, simplifyVector = FALSE)
+  })
+}
+
+# The shared core. perform() and perform_text() differ only in how they read a
+# 2xx body, so everything that matters (the breaker rule, the three failure
+# classes, the envelope construction) lives here once. Keeping the two entry
+# points as thin wrappers is the whole point of this package: two near-identical
+# copies is how the four app-local layers drifted apart in the first place.
+perform_with <- function(req, source, read_body) {
   host <- url_host(req$url)
   if (breaker_open(host)) {
     return(status_skipped(
@@ -84,12 +95,9 @@ perform <- function(req, source = "API") {
       detail = paste0(source, " returned HTTP ", http)
     ))
   }
-  body <- tryCatch(
-    httr2::resp_body_json(resp, check_type = FALSE, simplifyVector = FALSE),
-    error = function(e) e
-  )
+  body <- tryCatch(read_body(resp), error = function(e) e)
   if (inherits(body, "condition")) {
-    # A 2xx whose body is not the JSON we expected: an HTML error page, a proxy
+    # A 2xx whose body is not what we expected: an HTML error page, a proxy
     # interstitial, a truncated response. The host answered, so the breaker was
     # already cleared above and stays cleared.
     return(status_error(
@@ -134,49 +142,7 @@ perform <- function(req, source = "API") {
 #'
 #' @export
 perform_text <- function(req, source = "API") {
-  host <- url_host(req$url)
-  if (breaker_open(host)) {
-    return(status_skipped(
-      source = source,
-      detail = paste0(host, " breaker open")
-    ))
-  }
-  resp <- tryCatch(httr2::req_perform(req), error = function(e) e)
-  if (inherits(resp, "condition")) {
-    breaker_record(host, reachable = FALSE)
-    return(envelope(
-      classify_condition(resp),
-      source = source,
-      http = NA_integer_,
-      error = http_error_message(source, condition = resp),
-      detail = paste0("Could not reach ", source, ": ", conditionMessage(resp))
-    ))
-  }
-  http <- httr2::resp_status(resp)
-  breaker_record(host, reachable = TRUE)
-  if (http < 200 || http >= 300) {
-    return(envelope(
-      classify_http(http),
-      source = source,
-      http = http,
-      error = http_error_message(source, http = http),
-      detail = paste0(source, " returned HTTP ", http)
-    ))
-  }
-  body <- tryCatch(httr2::resp_body_string(resp), error = function(e) e)
-  if (inherits(body, "condition")) {
-    return(status_error(
-      source = source,
-      http = http,
-      error = http_error_message(source, http = http),
-      detail = paste0(
-        source,
-        " returned an unreadable body: ",
-        conditionMessage(body)
-      )
-    ))
-  }
-  status_ok(data = body, source = source, http = http)
+  perform_with(req, source, httr2::resp_body_string)
 }
 
 # Assemble a GET request from a base URL, an optional path, and a query. Blank
@@ -245,7 +211,7 @@ get_json <- function(
 ) {
   req <- build_get(base_url, path, query)
   req <- req_defaults(req, timeout, max_tries, headers, throttle)
-  key <- cache_key(source, paste0("GET ", req$url))
+  key <- cache_key(source, paste0("GET ", req$url), list(headers = headers))
   cached(key, function() perform(req, source))
 }
 
@@ -289,7 +255,11 @@ post_json <- function(
 ) {
   req <- httr2::req_body_json(httr2::request(url), body)
   req <- req_defaults(req, timeout, max_tries, headers, throttle)
-  key <- cache_key(source, paste0("POST ", url), body)
+  key <- cache_key(
+    source,
+    paste0("POST ", url),
+    list(body = body, headers = headers)
+  )
   cached(key, function() perform(req, source))
 }
 
@@ -335,6 +305,10 @@ get_text <- function(
 ) {
   req <- build_get(base_url, path, query)
   req <- req_defaults(req, timeout, max_tries, headers, throttle)
-  key <- cache_key(source, paste0("GET_TEXT ", req$url))
+  key <- cache_key(
+    source,
+    paste0("GET_TEXT ", req$url),
+    list(headers = headers)
+  )
   cached(key, function() perform_text(req, source))
 }
