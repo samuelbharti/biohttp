@@ -45,6 +45,9 @@ Day-one consumers:
 - **Batched calls.** `get_json_many()` and `post_json_many()` ask many questions
   of one source at once, in order, and only the entries the cache is missing
   reach the network.
+- **Query-string credentials.** For a service like NCBI E-utilities that has no
+  header form, `secret_query` attaches the key at dispatch, keeps it out of the
+  cache key, and redacts it from error messages.
 
 ## What it does not do
 
