@@ -196,6 +196,63 @@ test_that("post_json keys the cache on the body, not just the url", {
   expect_identical(calls, 2L)
 })
 
+test_that("two callers with different credentials do not share a cache entry", {
+  # Keying on the url alone would serve one caller's response to another, which
+  # for a key-gated source is somebody else's data.
+  breaker_reset()
+  cache_reset()
+  bodies <- c('{"who":"alice"}', '{"who":"bob"}')
+  calls <- 0L
+  httr2::local_mocked_responses(function(req) {
+    calls <<- calls + 1L
+    json_response(bodies[min(calls, length(bodies))])
+  })
+
+  alice <- get_json(
+    "https://mock.test",
+    path = "me",
+    source = "S",
+    headers = list(Authorization = "Bearer alice-token")
+  )
+  bob <- get_json(
+    "https://mock.test",
+    path = "me",
+    source = "S",
+    headers = list(Authorization = "Bearer bob-token")
+  )
+
+  expect_identical(calls, 2L)
+  expect_identical(alice$data$who, "alice")
+  expect_identical(bob$data$who, "bob")
+})
+
+test_that("the same credentials still hit the cache", {
+  breaker_reset()
+  cache_reset()
+  calls <- 0L
+  httr2::local_mocked_responses(function(req) {
+    calls <<- calls + 1L
+    json_response('{"ok":true}')
+  })
+  hdrs <- list(Authorization = "Bearer same-token")
+
+  get_json("https://mock.test", path = "me", source = "S", headers = hdrs)
+  get_json("https://mock.test", path = "me", source = "S", headers = hdrs)
+
+  expect_identical(calls, 1L)
+})
+
+test_that("perform and perform_text share one core", {
+  # They differ only in how a 2xx body is read, so the breaker rule and the
+  # three failure classes cannot drift apart between them. Two near-identical
+  # copies is exactly how the four app-local layers diverged.
+  expect_true(is.function(perform_with))
+  expect_identical(
+    names(formals(perform_with)),
+    c("req", "source", "read_body")
+  )
+})
+
 test_that("get_text returns a string and caches it once per url", {
   breaker_reset()
   cache_reset()

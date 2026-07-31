@@ -136,6 +136,13 @@ cache_get <- function(key) {
 #' disk cache would otherwise collide across app versions, and it would leak
 #' which queries were run to anyone able to probe it.
 #'
+#' **Put anything that changes the answer into `params`, credentials
+#' included.** The wrappers pass their `headers` through, because two callers
+#' hitting the same URL with different tokens can legitimately get different
+#' responses, and keying on the URL alone would serve one caller's data to the
+#' other. The cost is that rotating a token misses the cache once, which is the
+#' right trade.
+#'
 #' @param source A friendly label for the service.
 #' @param key Something identifying the call, usually the method and URL.
 #' @param params Anything else that changes the answer, such as a POST body.

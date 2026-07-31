@@ -27,6 +27,13 @@ The salt and the schema version are inside the hash, so changing either
 yields a fresh keyspace. Set \code{BIOHTTP_CACHE_SALT} per deployment: a shared
 disk cache would otherwise collide across app versions, and it would leak
 which queries were run to anyone able to probe it.
+
+\strong{Put anything that changes the answer into \code{params}, credentials
+included.} The wrappers pass their \code{headers} through, because two callers
+hitting the same URL with different tokens can legitimately get different
+responses, and keying on the URL alone would serve one caller's data to the
+other. The cost is that rotating a token misses the cache once, which is the
+right trade.
 }
 \examples{
 cache_key("gnomAD", "GET https://example.org/v1/gene/BRCA1")
