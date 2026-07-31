@@ -21,7 +21,7 @@ home:
 
 navbar:
   structure:
-    left: [reference, news]
+    left: [intro, reference, news]
     right: [github]
   components:
     github:
@@ -85,6 +85,11 @@ reference:
     contents:
       - is_blank
       - pluck_at
+
+  - title: Migration
+    desc: For an app moving off its own HTTP layer. Deprecated on arrival.
+    contents:
+      - as_legacy_envelope
 
   - title: Package
     contents:
