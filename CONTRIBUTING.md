@@ -24,7 +24,10 @@ first, not a commit.
 
 ## Branches and commits
 
-- `main` is protected. Do not commit to it directly. Open a pull request.
+- `dev` is the integration branch. **Every pull request targets `dev`**, not
+  `main`. `dev` is merged into `main` at a release.
+- Both `main` and `dev` are protected. Do not commit to either directly. The
+  `no-commit-to-branch` hook blocks it locally.
 - Name branches with a type prefix: `feat/<slug>`, `fix/<slug>`, or
   `chore/<slug>`.
 - Use Conventional Commit messages, for example `feat: add throttle argument`.
