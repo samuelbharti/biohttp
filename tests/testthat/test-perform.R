@@ -249,7 +249,7 @@ test_that("perform and perform_text share one core", {
   expect_true(is.function(perform_with))
   expect_identical(
     names(formals(perform_with)),
-    c("req", "source", "read_body")
+    c("req", "source", "read_body", "secret_query")
   )
 })
 
