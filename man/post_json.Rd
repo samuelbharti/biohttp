@@ -11,7 +11,8 @@ post_json(
   timeout = 20,
   max_tries = 3,
   headers = NULL,
-  throttle = NULL
+  throttle = NULL,
+  secret_query = NULL
 )
 }
 \arguments{
@@ -28,6 +29,11 @@ post_json(
 \item{headers}{A named list of headers, all marked sensitive.}
 
 \item{throttle}{An optional throttle spec. See \code{\link[=req_defaults]{req_defaults()}}.}
+
+\item{secret_query}{A named list of query-string credentials, for a service
+that has no header form. Deliberately \strong{not} part of the cache key, so it
+suits a credential that raises a rate limit and not one that changes the
+response. See \code{\link[=redact_secrets]{redact_secrets()}}.}
 }
 \value{
 An envelope. See \code{\link[=envelope]{envelope()}}.

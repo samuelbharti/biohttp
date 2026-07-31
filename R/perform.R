@@ -32,6 +32,9 @@
 #' @param req An httr2 request, prepared with [req_defaults()].
 #' @param source A friendly label for the service, used in the user-facing
 #'   message. For example `"gnomAD"`.
+#' @param secret_query A named list of query-string credentials. Appended here
+#'   rather than by the caller, so `req` itself never carries them and neither
+#'   does anything built from `req$url`. See [redact_secrets()].
 #'
 #' @return An envelope. See [envelope()].
 #'
@@ -49,8 +52,8 @@
 #' )
 #'
 #' @export
-perform <- function(req, source = "API") {
-  perform_with(req, source, read_json_body)
+perform <- function(req, source = "API", secret_query = NULL) {
+  perform_with(req, source, read_json_body, secret_query)
 }
 
 # The two body readers, named rather than inline so the parallel path in
@@ -69,7 +72,7 @@ read_text_body <- function(resp) {
 # classes, the envelope construction) lives here once. Keeping the two entry
 # points as thin wrappers is the whole point of this package: two near-identical
 # copies is how the four app-local layers drifted apart in the first place.
-perform_with <- function(req, source, read_body) {
+perform_with <- function(req, source, read_body, secret_query = NULL) {
   host <- url_host(req$url)
   if (breaker_open(host)) {
     return(status_skipped(
@@ -77,13 +80,17 @@ perform_with <- function(req, source, read_body) {
       detail = paste0(host, " breaker open")
     ))
   }
+  # The secret goes on here, at dispatch, and nowhere earlier. Everything built
+  # from the request before this point (the cache key, anything printable) sees
+  # a URL with no credential in it. See R/secrets.R.
+  req <- apply_secret_query(req, secret_query)
   # Only a transport failure trips the breaker, so the request itself is the
   # sole thing wrapped here. Once a response is in hand the host is reachable,
   # even for a 5xx or an unparsable body, and body parsing must not be mistaken
   # for the host being down. req_error() is disarmed in req_defaults(), so
   # req_perform() only throws on a genuine transport failure.
   resp <- tryCatch(httr2::req_perform(req), error = function(e) e)
-  classify_result(resp, source, host, read_body)
+  classify_result(resp, source, host, read_body, secret_query)
 }
 
 # Turn the outcome of a performed request into an envelope, and record what that
@@ -97,7 +104,13 @@ perform_with <- function(req, source, read_body) {
 # `resp` is either an httr2 response or the condition raised when no response
 # arrived at all. req_perform() and req_perform_parallel(on_error = "continue")
 # both hand back that same pair of possibilities.
-classify_result <- function(resp, source, host, read_body) {
+classify_result <- function(
+  resp,
+  source,
+  host,
+  read_body,
+  secret_query = NULL
+) {
   if (inherits(resp, "condition")) {
     breaker_record(host, reachable = FALSE)
     return(envelope(
@@ -105,7 +118,12 @@ classify_result <- function(resp, source, host, read_body) {
       source = source,
       http = NA_integer_,
       error = http_error_message(source, condition = resp),
-      detail = paste0("Could not reach ", source, ": ", conditionMessage(resp))
+      # A curl failure message normally carries the URL that failed, which is
+      # the one place a query-string credential can still surface.
+      detail = redact_secrets(
+        paste0("Could not reach ", source, ": ", conditionMessage(resp)),
+        secret_query
+      )
     ))
   }
   http <- httr2::resp_status(resp)
@@ -128,10 +146,13 @@ classify_result <- function(resp, source, host, read_body) {
       source = source,
       http = http,
       error = http_error_message(source, http = http),
-      detail = paste0(
-        source,
-        " returned an unreadable body: ",
-        conditionMessage(body)
+      detail = redact_secrets(
+        paste0(
+          source,
+          " returned an unreadable body: ",
+          conditionMessage(body)
+        ),
+        secret_query
       )
     ))
   }
@@ -165,8 +186,8 @@ classify_result <- function(resp, source, host, read_body) {
 #' )
 #'
 #' @export
-perform_text <- function(req, source = "API") {
-  perform_with(req, source, read_text_body)
+perform_text <- function(req, source = "API", secret_query = NULL) {
+  perform_with(req, source, read_text_body, secret_query)
 }
 
 # Assemble a GET request from a base URL, an optional path, and a query. Blank
@@ -199,6 +220,10 @@ build_get <- function(base_url, path, query) {
 #' @param max_tries Total attempts, including the first.
 #' @param headers A named list of headers, all marked sensitive.
 #' @param throttle An optional throttle spec. See [req_defaults()].
+#' @param secret_query A named list of query-string credentials, for a service
+#'   that has no header form. Deliberately **not** part of the cache key, so it
+#'   suits a credential that raises a rate limit and not one that changes the
+#'   response. See [redact_secrets()].
 #'
 #' @return An envelope. See [envelope()].
 #'
@@ -231,12 +256,15 @@ get_json <- function(
   timeout = 15,
   max_tries = 3,
   headers = NULL,
-  throttle = NULL
+  throttle = NULL,
+  secret_query = NULL
 ) {
   req <- build_get(base_url, path, query)
   req <- req_defaults(req, timeout, max_tries, headers, throttle)
+  # req$url holds no secret, so neither does the key. That is the point: a
+  # rate-limit credential must not partition the cache. See R/secrets.R.
   key <- cache_key(source, paste0("GET ", req$url), list(headers = headers))
-  cached(key, function() perform(req, source))
+  cached(key, function() perform(req, source, secret_query))
 }
 
 #' POST a JSON body
@@ -275,7 +303,8 @@ post_json <- function(
   timeout = 20,
   max_tries = 3,
   headers = NULL,
-  throttle = NULL
+  throttle = NULL,
+  secret_query = NULL
 ) {
   req <- httr2::req_body_json(httr2::request(url), body)
   req <- req_defaults(req, timeout, max_tries, headers, throttle)
@@ -284,7 +313,7 @@ post_json <- function(
     paste0("POST ", url),
     list(body = body, headers = headers)
   )
-  cached(key, function() perform(req, source))
+  cached(key, function() perform(req, source, secret_query))
 }
 
 #' GET a text endpoint
@@ -325,7 +354,8 @@ get_text <- function(
   timeout = 30,
   max_tries = 3,
   headers = NULL,
-  throttle = NULL
+  throttle = NULL,
+  secret_query = NULL
 ) {
   req <- build_get(base_url, path, query)
   req <- req_defaults(req, timeout, max_tries, headers, throttle)
@@ -334,5 +364,5 @@ get_text <- function(
     paste0("GET_TEXT ", req$url),
     list(headers = headers)
   )
-  cached(key, function() perform_text(req, source))
+  cached(key, function() perform_text(req, source, secret_query))
 }
