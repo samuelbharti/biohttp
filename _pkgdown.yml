@@ -38,6 +38,15 @@ reference:
       - post_json
       - get_text
 
+  - title: Ask many questions at once
+    desc: >
+      For many questions to one source. Only the entries the cache is missing
+      reach the network.
+    contents:
+      - get_json_many
+      - post_json_many
+      - perform_many
+
   - title: Build and perform your own request
     desc: For a call the wrappers do not cover.
     contents:

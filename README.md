@@ -42,6 +42,9 @@ Day-one consumers:
 - **A success-only cache.** A failed call is never stored. Memory tier by
   default, opt-in disk tier that degrades to memory-only when the directory is
   not writable.
+- **Batched calls.** `get_json_many()` and `post_json_many()` ask many questions
+  of one source at once, in order, and only the entries the cache is missing
+  reach the network.
 
 ## What it does not do
 
@@ -52,6 +55,9 @@ Day-one consumers:
   no schema.
 - No vendor-specific retry or rate-limit numbers. The package offers the
   mechanism; the client supplies the policy.
+- No worker pool. Batching covers many questions to one source. Fanning out
+  across a dozen *different* services at once needs process-level concurrency
+  with a daemon lifecycle, and that belongs in an application.
 
 ## Dependencies
 
@@ -117,6 +123,7 @@ install.packages("biohttp", repos = "https://samuelbharti.r-universe.dev")
 | 0. Scaffold | done |
 | 1. Port the transport from `multi-variant-reviewer` | done |
 | 2. Apply the envelope contract, write the vignette, tag 0.1.0 | done |
+| 2b. Batched calls, tag 0.2.0 | done |
 | 3. Publish to r-universe, pkgdown site live | not started |
 | 4. Pilot migration of `variant-reviewer`, including the Docker rebuild | not started |
 
