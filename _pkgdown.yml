@@ -1,0 +1,34 @@
+url: https://www.samuelbharti.com/biohttp/
+
+# pkgdown defaults to docs/, but docs/local/ holds the working plans, so the
+# generated site gets its own directory instead of sharing one.
+destination: _site
+
+template:
+  bootstrap: 5
+  light-switch: true
+  bslib:
+    primary: "#1a6b54"
+    base_font: {google: "Source Sans 3"}
+    heading_font: {google: "Bricolage Grotesque"}
+    code_font: {google: "JetBrains Mono"}
+    border-radius: "0.25rem"
+
+home:
+  title: biohttp
+  description: >
+    One HTTP transport layer for R clients of biological web services.
+
+navbar:
+  structure:
+    left: [reference, news]
+    right: [github]
+  components:
+    github:
+      icon: fab fa-github
+      href: https://github.com/samuelbharti/biohttp
+
+reference:
+  - title: Package
+    contents:
+      - biohttp-package
