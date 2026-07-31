@@ -1,3 +1,38 @@
+# biohttp 0.3.0
+
+Query-string credentials. Additive only: every existing call keeps its
+behaviour, and the envelope is untouched.
+
+## secret_query
+
+* `get_json()`, `post_json()`, `get_text()`, `perform()`, `perform_text()`, and
+  the batched wrappers take a `secret_query` argument: a named list of query
+  parameters carrying a credential.
+* NCBI E-utilities is why this exists. Its `api_key` raises a caller from 3 to
+  10 requests a second and there is no header form, so the credential has to
+  travel in the URL.
+* The credential is attached at dispatch rather than by the caller, so the
+  request object never holds it. Nothing built from `req$url` beforehand, the
+  cache key included, can carry it.
+* It is deliberately **not** part of the cache key. A rate-limit credential does
+  not change the answer, so letting it partition the cache would discard every
+  warmed entry the moment a key was configured or rotated.
+* `redact_secrets()` is exported and applied to the messages built from a
+  transport or parse failure, because a curl error normally carries the URL that
+  failed.
+
+## What this is not for
+
+A credential that changes *what comes back* must go in `headers`, which is part
+of the cache key. `secret_query` is for one that changes a rate limit or a
+quota. `SECURITY.md` states the rule.
+
+## A note on httr2
+
+`httr2::req_url_query()` has no `.redact`, and passing one does not error: it is
+taken as another query parameter and appended to the URL. This package therefore
+does the redaction itself rather than delegating it.
+
 # biohttp 0.2.0
 
 Batching. Additive only: nothing in the 0.1.0 contract changed, and the envelope
