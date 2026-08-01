@@ -1,10 +1,11 @@
 name: pr-title
 
-# Only a pull request into main runs this. The same rule is enforced on every
-# commit message locally by conventional-pre-commit.
+# Every pull request runs this, into dev as well as main. The same rule is
+# enforced on every commit message locally by conventional-pre-commit, but a
+# pull request title is not a commit message and nothing local sees it.
 on:
   pull_request:
-    branches: [main]
+    branches: [main, dev]
     types: [opened, edited, reopened, synchronize]
 
 permissions:
