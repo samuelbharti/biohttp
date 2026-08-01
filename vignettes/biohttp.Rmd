@@ -258,9 +258,18 @@ start writing to somebody's disk because they installed it:
 | Variable | Default | What it does |
 | --- | --- | --- |
 | `BIOHTTP_CACHE_TTL` | 1800 | Memory tier max age, seconds |
+| `BIOHTTP_CACHE_MAX_SIZE` | 256 MB | Memory tier ceiling, bytes |
+| `BIOHTTP_CACHE_MAX_N` | unlimited | Memory tier ceiling, number of entries |
 | `BIOHTTP_CACHE_DISK` | off | Set to `true` to add the disk tier |
 | `BIOHTTP_CACHE_DIR` | `data/cache` | Where the disk tier lives |
+| `BIOHTTP_CACHE_DISK_TTL` | 7 days | Disk tier max age, seconds |
 | `BIOHTTP_CACHE_SALT` | empty | Set per deployment |
+
+The two ceilings bound different things, and a long-running process can blow
+through one while sitting well inside the other. `BIOHTTP_CACHE_MAX_SIZE` bounds
+bytes, so a server answering thousands of small responses stays under it while
+holding far more entries than you meant to. Set `BIOHTTP_CACHE_MAX_N` if the
+count is what you care about. Eviction is least-recently-used in both cases.
 
 Set `BIOHTTP_CACHE_SALT` if you enable the disk tier. Without it a shared cache
 directory can collide across app versions, and it leaks which queries were run
