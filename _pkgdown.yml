@@ -73,6 +73,13 @@ reference:
       - http_error_message
       - graphql_error
 
+  - title: Credentials
+    desc: >
+      For a service that takes its key in the query string rather than a
+      header. See SECURITY.md for the rule on which belongs where.
+    contents:
+      - redact_secrets
+
   - title: Circuit breaker
     desc: >
       Per-host state. Only a transport failure counts against a host; a 5xx or
