@@ -35,8 +35,13 @@ jobs:
           extra-packages: any::pkgdown, local::.
           needs: website
 
+      # dest_dir has to be passed explicitly. build_site_github_pages() defaults
+      # it to "docs", and that default overrides the destination set in
+      # _pkgdown.yml, so the site was being written somewhere the upload step
+      # was not looking. docs/ is also where the working notes live locally,
+      # which is why the site was given its own directory in the first place.
       - name: Build pkgdown site
-        run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
+        run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE, dest_dir = "_site")
         shell: Rscript {0}
 
       - uses: actions/upload-artifact@v4
