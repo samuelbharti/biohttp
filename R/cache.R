@@ -29,6 +29,23 @@ cache_disk_enabled <- function() {
 # test points at a tempdir, is read then rather than at load time.
 cache_store <- new.env(parent = emptyenv())
 
+# Everything build_cache() reads. Recorded alongside the store so cache_reset()
+# can tell a reset that only needs the entries cleared from one that needs a
+# differently configured store.
+#
+# BIOHTTP_CACHE_SALT is deliberately absent: it changes cache keys, not the
+# object holding them, so it never requires a rebuild.
+cache_config <- function() {
+  list(
+    ttl = env_num("BIOHTTP_CACHE_TTL", 1800),
+    max_size = env_num("BIOHTTP_CACHE_MAX_SIZE", 256 * 1024^2),
+    max_n = env_num("BIOHTTP_CACHE_MAX_N", Inf),
+    disk = cache_disk_enabled(),
+    dir = cache_dir(),
+    disk_ttl = env_num("BIOHTTP_CACHE_DISK_TTL", 7 * 24 * 3600)
+  )
+}
+
 # Build the disk tier, or return NULL if it will not actually work.
 #
 # cachem::cache_disk() does NOT error when it cannot create the directory. It
@@ -93,6 +110,10 @@ build_cache <- function() {
 #' `BIOHTTP_CACHE_DISK` asks for the disk tier, in which case the two are
 #' layered. Built on first use.
 #'
+#' It is safe to hold the returned object. [cache_reset()] clears it in place
+#' rather than replacing it, unless a cache setting has changed, in which case a
+#' differently configured store genuinely has to be built. See [cache_reset()].
+#'
 #' @return A `cachem` cache object.
 #'
 #' @examples
@@ -103,24 +124,49 @@ build_cache <- function() {
 cache <- function() {
   if (is.null(cache_store$store)) {
     cache_store$store <- build_cache()
+    cache_store$config <- cache_config()
   }
   cache_store$store
 }
 
-#' Drop the cache store
+#' Empty the cache
 #'
-#' Forgets the singleton so the next [cache()] rebuilds it, picking up any
-#' changed environment settings. Tests use this to isolate, after pointing
-#' `BIOHTTP_CACHE_DIR` at a fresh tempdir.
+#' Removes every entry. Which of two things happens underneath depends on
+#' whether the cache settings have changed since the store was built:
+#'
+#' \describe{
+#'   \item{Settings unchanged}{The existing store is cleared in place, so a
+#'     reference taken from [cache()] earlier stays valid and keeps pointing at
+#'     the live cache. This is the ordinary case.}
+#'   \item{Settings changed}{The store is dropped so the next [cache()] builds
+#'     one from the new settings. Tests rely on this after pointing
+#'     `BIOHTTP_CACHE_DIR` at a fresh tempdir or toggling
+#'     `BIOHTTP_CACHE_DISK`.}
+#' }
+#'
+#' The in-place branch exists because dropping unconditionally silently orphans
+#' any held reference: writes through it go somewhere nothing else can see, and
+#' the only symptom is a hit rate quietly falling to zero. A reference held
+#' across a genuine settings change is still orphaned, but nothing changes cache
+#' settings mid-run except a test suite, and those do not hold references.
 #'
 #' @return `NULL`, invisibly.
 #'
 #' @examples
+#' held <- cache()
 #' cache_reset()
+#' identical(held, cache())
 #'
 #' @export
 cache_reset <- function() {
-  cache_store$store <- NULL
+  unchanged <- !is.null(cache_store$store) &&
+    identical(cache_store$config, cache_config())
+  if (unchanged) {
+    cache_store$store$reset()
+  } else {
+    cache_store$store <- NULL
+    cache_store$config <- NULL
+  }
   invisible(NULL)
 }
 
