@@ -6,7 +6,7 @@
 
 One HTTP transport layer for R clients of biological web services.
 
-> **Status:** scaffold only. No transport code yet. See the roadmap below.
+> **Status:** 0.1.0. The contract is public. Not published yet.
 
 ## Why
 
@@ -114,11 +114,34 @@ install.packages("biohttp", repos = "https://samuelbharti.r-universe.dev")
 
 | Phase | State |
 | --- | --- |
-| 0. Scaffold | in progress |
-| 1. Port the transport from `multi-variant-reviewer` verbatim | not started |
-| 2. Apply the envelope contract, write the vignette, tag 0.1.0 | not started |
+| 0. Scaffold | done |
+| 1. Port the transport from `multi-variant-reviewer` | done |
+| 2. Apply the envelope contract, write the vignette, tag 0.1.0 | done |
 | 3. Publish to r-universe, pkgdown site live | not started |
 | 4. Pilot migration of `variant-reviewer`, including the Docker rebuild | not started |
+
+## Using it
+
+`vignette("biohttp")` is the guide for client authors. The short version:
+
+```r
+res <- get_json(
+  "https://mygene.info/v3",
+  path = "query",
+  query = list(q = "BRCA1", species = "human"),
+  source = "MyGene"
+)
+
+switch(res$status,
+  ok = res$data$hits,
+  no_data = NULL,
+  skipped = NULL,
+  stop(res$error)
+)
+```
+
+There is no `tryCatch()` in that, and there does not need to be. A DNS failure,
+a 503, and a 200 carrying an HTML maintenance page all come back as values.
 
 ## Contributing
 
