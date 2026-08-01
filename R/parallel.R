@@ -211,20 +211,33 @@ cached_many <- function(
   if (length(miss) == 0) {
     return(hits)
   }
+  # Two positions asking the identical question are one request, not two. A
+  # repeated gene in a list is common enough to be worth collapsing, and the
+  # cache cannot do it here: the requests in a batch are in flight together, so
+  # the second one is dispatched long before the first has an entry to serve.
+  miss_keys <- unlist(keys[miss], use.names = FALSE)
+  distinct <- !duplicated(miss_keys)
+  send <- miss[distinct]
+
   fetched <- perform_many_with(
-    reqs[miss],
+    reqs[send],
     source,
     max_active,
     progress,
     read_body,
     secret_query
   )
+
+  # Every position that asked gets the answer, including the ones whose request
+  # was never sent.
+  slot <- match(miss_keys, miss_keys[distinct])
   for (k in seq_along(miss)) {
-    res <- fetched[[k]]
-    hits[[miss[k]]] <- res
+    hits[[miss[k]]] <- fetched[[slot[k]]]
+  }
+  for (j in seq_along(send)) {
     # Same rule as cached(): only a success is ever stored.
-    if (isTRUE(res$ok)) {
-      cache()$set(keys[[miss[k]]], res)
+    if (isTRUE(fetched[[j]]$ok)) {
+      cache()$set(keys[[send[j]]], fetched[[j]])
     }
   }
   hits
