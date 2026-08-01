@@ -24,6 +24,7 @@ Depends:
     R (>= 4.0)
 Imports:
     cachem,
+    curl,
     httr2,
     jsonlite,
     rlang

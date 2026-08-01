@@ -64,10 +64,11 @@ Day-one consumers:
 
 ## Dependencies
 
-`Imports` is `httr2`, `cachem`, `jsonlite`, and `rlang`, and that is a hard
-constraint. Every downstream package and app inherits this list, so anything
-added here is added everywhere. A dependency that looks harmless in a transport
-layer becomes a transitive dependency of six Shiny apps and a Docker image.
+`Imports` is `httr2`, `cachem`, `curl`, `jsonlite`, and `rlang`, and that is a
+hard constraint. Every downstream package and app inherits this list, so
+anything added here is added everywhere. A dependency that looks harmless in a
+transport layer becomes a transitive dependency of every application that
+installs it, and of every container image those are built into.
 
 `jsonlite` is on the list for a reason worth knowing about. httr2 carries it in
 Suggests, not Imports, and `httr2::resp_body_json()` calls
@@ -75,6 +76,11 @@ Suggests, not Imports, and `httr2::resp_body_json()` calls
 installs cleanly and then fails on the first `get_json()` call, which is the
 package's main entry point. It costs nothing in practice: `shiny` imports
 `jsonlite` directly, so every consumer app already has it.
+
+`curl` is declared because `redact_secrets()` calls `curl::curl_escape()`
+directly, matching the encoder httr2 builds query strings with. It is already a
+hard `Imports` of httr2, so it adds nothing to what a consumer installs; it is
+named here because the package uses it rather than merely inheriting it.
 
 Resolved against CRAN on 2026-07-31, with `httr2` 1.3.0, `cachem` 1.1.0,
 `jsonlite` 2.0.0, and `rlang` 1.3.0:

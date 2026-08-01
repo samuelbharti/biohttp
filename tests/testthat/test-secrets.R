@@ -122,6 +122,56 @@ test_that("redact_secrets replaces the value wherever it appears", {
   )
 })
 
+test_that("redact_secrets catches the percent-encoded form as well", {
+  # An alphanumeric secret is the easy case, and it is the only case the rest of
+  # this file exercised. A secret reaches a URL through req_url_query(), which
+  # percent-encodes it, so a key holding "+", "/", or "=" never appears in the
+  # form it was passed. Those are ordinary characters in a base64 key.
+  secret <- "ab+cd/ef=gh"
+  encoded <- curl::curl_escape(secret)
+
+  out <- redact_secrets(
+    paste0("Could not resolve host: x.test/?api_key=", encoded),
+    list(api_key = secret)
+  )
+
+  expect_false(grepl(encoded, out, fixed = TRUE))
+  expect_false(grepl("2Bcd", out, fixed = TRUE))
+  expect_identical(out, "Could not resolve host: x.test/?api_key=<redacted>")
+})
+
+test_that("redact_secrets still catches the raw form of an encodable secret", {
+  # Both forms have to work: the encoded one reaches a URL, the raw one reaches
+  # a message that quotes the configured value back.
+  expect_identical(
+    redact_secrets("configured key ab+cd/ef=gh", list(k = "ab+cd/ef=gh")),
+    "configured key <redacted>"
+  )
+})
+
+test_that("a base64-shaped credential is redacted from a real failure", {
+  # The end to end version of the two above. The message is built from the URL
+  # the request actually carried rather than hand written, so it cannot drift
+  # away from what httr2 encodes.
+  breaker_reset()
+  cache_reset()
+  secret <- "ab+cd/ef=gh"
+  httr2::local_mocked_responses(function(req) {
+    stop("Could not resolve host: ", req$url)
+  })
+
+  res <- get_json(
+    "https://eutils.test/entrez",
+    source = "ClinVar",
+    secret_query = list(api_key = secret)
+  )
+
+  expect_false(isTRUE(res$ok))
+  expect_false(grepl(secret, res$detail, fixed = TRUE))
+  expect_false(grepl(curl::curl_escape(secret), res$detail, fixed = TRUE))
+  expect_match(res$detail, "<redacted>", fixed = TRUE)
+})
+
 test_that("redact_secrets leaves a message alone when there is no secret", {
   expect_identical(redact_secrets("plain message"), "plain message")
   expect_identical(redact_secrets("plain message", list()), "plain message")
