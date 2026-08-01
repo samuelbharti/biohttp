@@ -57,8 +57,9 @@ today. Reach for one of those before proposing a compiled language here.
 ## Where the checks run
 
 Everything is checked locally, on every commit, through the prek hooks. The
-GitHub workflows run only on a pull request into `main`, which is the release
-gate. A pull request into `dev` runs nothing on GitHub.
+GitHub workflows run only at the release gate: a pull request into `main`, and
+the push to `main` when it merges. A pull request into `dev` runs nothing on
+GitHub, and neither does a feature branch.
 
 That means the local run is not a convenience, it is the check. Before pushing:
 
@@ -69,7 +70,12 @@ Rscript -e 'rcmdcheck::rcmdcheck(args = c("--no-manual", "--as-cran"))'
 ```
 
 A `dev` to `main` pull request then runs the full matrix once: `R CMD check` on
-five platforms, lintr, prek, gitleaks, and the pkgdown build.
+five platforms, lintr, prek, gitleaks, and the pkgdown build. Merging it
+publishes the documentation site.
+
+Publishing needs Pages enabled on the repository with **GitHub Actions** as the
+source. Until that is done the `deploy` job fails on a push to `main` while
+everything else still passes, so it never blocks a pull request.
 
 ## Local setup
 

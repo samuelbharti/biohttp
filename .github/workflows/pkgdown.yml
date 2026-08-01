@@ -1,8 +1,13 @@
 name: pkgdown
 
-# Only a pull request into main runs this. Build the site locally with
-# `pkgdown::build_site(preview = FALSE)` while working. See CONTRIBUTING.md.
+# A pull request into main builds the site to prove it still builds. Only a
+# push to main publishes it, which happens when dev is merged in at a release.
+# Nothing on a feature branch or a pull request into dev runs here at all;
+# build the site locally with `pkgdown::build_site(preview = FALSE)` while
+# working. See CONTRIBUTING.md.
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -10,13 +15,13 @@ on:
 permissions:
   contents: read
 
+# Two deploys must never overlap, but a release already under way should finish
+# rather than be cancelled halfway. Only a pull request build is disposable.
 concurrency:
   group: pkgdown-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # Build only. Publishing the site to Pages waits for Phase 3, when the repo
-  # goes public and lands on r-universe.
   build:
     runs-on: ubuntu-latest
     name: build
@@ -45,8 +50,28 @@ jobs:
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE, dest_dir = "_site")
         shell: Rscript {0}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         with:
-          name: site
           path: _site
-          if-no-files-found: error
+
+  # Publish only from main. A pull request stops after build, so the site is
+  # proven to build without anything being published.
+  #
+  # This needs Pages enabled on the repository with "GitHub Actions" as the
+  # source. Until that is done the job fails while the build job still passes,
+  # so a pull request is never blocked by it.
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    name: deploy
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
