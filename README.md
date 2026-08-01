@@ -6,7 +6,8 @@
 
 One HTTP transport layer for R clients of biological web services.
 
-> **Status:** 0.1.0. The contract is public. Not published yet.
+> **Status:** 0.1.0. The contract is public. Documentation is at
+> <https://www.samuelbharti.com/biohttp/>. Not on r-universe yet.
 
 ## Why
 
