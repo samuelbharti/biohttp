@@ -1,0 +1,32 @@
+Package: biohttp
+Title: Normalized HTTP Transport with Circuit Breaking and Caching
+Version: 0.0.0.9000
+Authors@R:
+    person("Samuel", "Bharti", , "samuelbharti.io@gmail.com",
+           role = c("aut", "cre", "cph"),
+           comment = c(ORCID = "0000-0003-4190-7058"))
+Description: Web service calls return a normalized result value instead of
+    raising a condition, so a caller branches on data rather than on an error
+    handler. Transport failure, a non-success status code, and an unreadable
+    response body are reported as three distinct outcomes. Per-host circuit
+    breaking, retry with a transient-failure predicate, optional throttling,
+    redacted request headers, and a success-only cache come as defaults. Service
+    specific knowledge is left to the client packages built on top.
+License: MIT + file LICENSE
+URL: https://github.com/samuelbharti/biohttp,
+    https://www.samuelbharti.com/biohttp/
+BugReports: https://github.com/samuelbharti/biohttp/issues
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Depends:
+    R (>= 4.0)
+Imports:
+    cachem,
+    httr2,
+    rlang
+Suggests:
+    testthat (>= 3.0.0),
+    webfakes,
+    withr
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.0.0

@@ -1,0 +1,17 @@
+^LICENSE\.md$
+^\.Rbuildignore$
+^_pkgdown\.yml$
+^docs$
+^_site$
+^pkgdown$
+^vignettes/articles$
+^cran-comments\.md$
+^\.github$
+^air\.toml$
+^\.lintr$
+^\.pre-commit-config\.yaml$
+^\.gitattributes$
+^CITATION\.cff$
+^CODE_OF_CONDUCT\.md$
+^CONTRIBUTING\.md$
+^SECURITY\.md$
