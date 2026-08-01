@@ -17,9 +17,10 @@ http_error_message(source, http = NA_integer_, condition = NULL)
 A single string.
 }
 \description{
-One actionable sentence per failure class, with no httr2 or curl internals in
-it. Pass \code{http} for a response that arrived, or \code{condition} for a transport
-failure where none did.
+Works out which status the failure is and asks \code{\link[=status_message]{status_message()}} for the
+wording, so it honours \code{biohttp.status_message} like everything else. Pass
+\code{http} for a response that arrived, or \code{condition} for a transport failure
+where none did.
 }
 \examples{
 http_error_message("gnomAD", http = 404L)

@@ -1,3 +1,50 @@
+# biohttp 0.1.1
+
+Everything here came out of the first real migration onto 0.1.0, which is where
+a transport contract meets an app that already had its own opinions.
+
+## Fixed
+
+* `cache_reset()` no longer orphans a reference taken from `cache()`. It used to
+  drop the store, so the next `cache()` built a new one and anything held
+  earlier pointed at a dead object: writes went where nothing else could see
+  them, reads returned stale entries, and the only symptom was a hit rate
+  quietly falling to zero. The reset now clears the store in place when no cache
+  setting has changed, and only rebuilds when one has, which is what test
+  isolation needs (#21).
+
+## Added
+
+* `BIOHTTP_CACHE_MAX_N` bounds the memory tier by number of entries.
+  `BIOHTTP_CACHE_MAX_SIZE` bounds bytes, and a long-running process answering
+  many small responses stays well under that while holding far more entries than
+  intended. Defaults to `cachem`'s own `Inf`, so nothing changes unless it is
+  set (#22).
+* `status_message()` produces every user-facing sentence in the package, and
+  setting the `biohttp.status_message` option replaces them. That is how an app
+  keeps its own voice, or localises, while adopting the transport. Returning
+  anything other than a single non-empty string falls back to the built-in, so
+  overriding one status and leaving the rest is the expected use. The override
+  runs inside `tryCatch()`, because it sits on the failure path and the package
+  promises never to raise there (#23).
+
+## Changed
+
+* The `status_*()` constructors used to hardcode their own copies of sentences
+  that also lived in `http_error_message()`, and the two had drifted: three
+  different sentences existed for "temporarily unavailable". They now share one
+  set. `status_error()`'s default gains "Please try again." as a result, which is
+  the only user-visible wording change.
+* A 408 now reads "took too long to respond" rather than the generic "could not
+  retrieve". `classify_http()` has always called 408 a timeout, so the envelope
+  said `timeout` while the sentence a user read said something else. They agree
+  now.
+* The vignette's cache table documents `BIOHTTP_CACHE_MAX_SIZE` and
+  `BIOHTTP_CACHE_DISK_TTL`, which it had never listed.
+* A test asserts `DESCRIPTION`, `.zenodo.json` and `CITATION.cff` agree on the
+  version. Nothing read it from one source, so a stale archive label was a
+  matter of time.
+
 # biohttp 0.1.0
 
 First version with a public contract. The envelope shape is fixed from here;

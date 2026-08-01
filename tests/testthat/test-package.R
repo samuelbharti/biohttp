@@ -31,3 +31,28 @@ test_that("the json parser httr2 defers to is actually available", {
   # The failure this guards is silent at install time and loud at call time.
   expect_true(requireNamespace("jsonlite", quietly = TRUE))
 })
+
+# The version is written in three places and nothing reads it from one source.
+# .zenodo.json is what a release is archived under and CITATION.cff is what
+# GitHub renders in the cite box, so either going stale mislabels the record
+# permanently, in a way no one notices until someone cites it. These files are
+# in .Rbuildignore, so they are read from the source tree rather than from the
+# installed package and the test is skipped when it is not run from source.
+test_that("DESCRIPTION, .zenodo.json and CITATION.cff agree on the version", {
+  root <- file.path(testthat::test_path(), "..", "..")
+  zenodo <- file.path(root, ".zenodo.json")
+  citation <- file.path(root, "CITATION.cff")
+  skip_if_not(file.exists(zenodo) && file.exists(citation), "not a source tree")
+
+  declared <- as.character(utils::packageVersion("biohttp"))
+
+  expect_identical(jsonlite::fromJSON(zenodo)$version, declared)
+
+  cff <- readLines(citation, warn = FALSE)
+  cff_version <- trimws(sub(
+    "^version:",
+    "",
+    grep("^version:", cff, value = TRUE)[1]
+  ))
+  expect_identical(gsub("[\"']", "", cff_version), declared)
+})
