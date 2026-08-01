@@ -2,6 +2,7 @@
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/samuelbharti/biohttp/actions/workflows/r.yml/badge.svg)](https://github.com/samuelbharti/biohttp/actions/workflows/r.yml)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21731864.svg)](https://doi.org/10.5281/zenodo.21731864)
 <!-- badges: end -->
 
 One HTTP transport layer for R clients of biological web services.
@@ -156,6 +157,20 @@ switch(res$status,
 
 There is no `tryCatch()` in that, and there does not need to be. A DNS failure,
 a 503, and a 200 carrying an HTML maintenance page all come back as values.
+
+## Citing biohttp
+
+Each release is archived on Zenodo. Use the concept DOI, which always resolves
+to the newest release:
+
+> Bharti, S. (2026). *biohttp: Normalized HTTP Transport with Circuit Breaking
+> and Caching*. Zenodo. <https://doi.org/10.5281/zenodo.21731864>
+
+To pin the exact version you used, cite its own DOI instead. Version 0.1.0 is
+[10.5281/zenodo.21731865](https://doi.org/10.5281/zenodo.21731865).
+
+`CITATION.cff` carries the same metadata, so `citation("biohttp")` in R and the
+"Cite this repository" button on GitHub both work.
 
 ## Contributing
 
