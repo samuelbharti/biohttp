@@ -1,9 +1,10 @@
 name: pkgdown
 
+# Only a pull request into main runs this. Build the site locally with
+# `pkgdown::build_site(preview = FALSE)` while working. See CONTRIBUTING.md.
 on:
-  push:
-    branches: [main, dev]
   pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
