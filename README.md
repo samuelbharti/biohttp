@@ -131,9 +131,9 @@ install.packages("biohttp", repos = "https://samuelbharti.r-universe.dev")
 | --- | --- |
 | 0. Scaffold | done |
 | 1. Port the transport from `multi-variant-reviewer` | done |
-| 2. Apply the envelope contract, write the vignette, tag 0.1.0 | done |
-| 2b. Batched calls, tag 0.2.0 | done |
-| 3. Publish to r-universe, pkgdown site live | not started |
+| 2. Apply the envelope contract, write the vignette | done |
+| 2b. Batched calls and query-string credentials | done |
+| 3. Publish to r-universe, tag 0.1.0, pkgdown site live | not started |
 | 4. Pilot migration of `variant-reviewer`, including the Docker rebuild | not started |
 
 ## Using it

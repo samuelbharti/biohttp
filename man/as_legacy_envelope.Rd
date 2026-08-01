@@ -14,7 +14,7 @@ A list with \code{ok}, \code{status} (the HTTP code), \code{data}, \code{error},
 \code{detail}.
 }
 \description{
-\strong{Deprecated.} Scheduled for removal in 0.1.0's successor line, 0.3.0.
+\strong{Deprecated.} Scheduled for removal in 0.3.0.
 
 Translates an \code{\link[=envelope]{envelope()}} into the shape \code{variant-reviewer} and \code{genescout}
 return today:
