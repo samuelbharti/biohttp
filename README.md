@@ -10,22 +10,19 @@ One HTTP transport layer for R clients of biological web services.
 
 ## Why
 
-Four apps in this family each grew their own HTTP layer by copying the nearest
-one, and the copies have drifted. A latent `.Rprofile` bug was fixed in some but
-not all of them. One copy raises a condition where the other three return a
-value. Every new app starts by copying whichever version was closest to hand.
+An app that talks to a biological web service usually grows its own HTTP layer,
+and the next app starts by copying it. The copies then drift. One returns a
+value where another raises a condition. A bug gets fixed in one and not the
+rest. Every copy has its own opinion about whether a 500 means the source is
+down.
 
-biohttp is that layer extracted once, installed rather than copied, so a fix
-lands in one place.
+The awkward part is that none of that is really about biology. It is retry,
+timeouts, caching, and deciding what a failure means, written again each time
+because it was easier to copy than to extract.
 
-Day-one consumers:
-
-| App | Current file |
-| --- | --- |
-| `multi-variant-reviewer` | `R/http.R` and `R/cache.R`. The superset, and the source of truth for the port. |
-| `genescout` | `R/http.R`. Adds text and other non-JSON response handling. |
-| `variant-reviewer` | `R/api_http.R`. The lineage ancestor, and the first migration target. |
-| `knowledge-graph-viewer` | `R/api_http.R`. Raises instead of returning, so it needs a behavior change to adopt. |
+biohttp is that layer written once and installed rather than copied. It knows
+how to make an HTTP call and report what happened. It does not know what a gene
+is, and it never will.
 
 ## What it does
 
@@ -52,8 +49,8 @@ Day-one consumers:
 ## What it does not do
 
 - No Shiny. Not in Imports, not in Suggests, not in tests.
-- No service-specific knowledge. Nothing here knows what a gene is. Service
-  clients live in `bioclients`.
+- No service-specific knowledge. Nothing here knows what a gene is. That belongs
+  in a client package built on top.
 - No parsing beyond JSON and text bodies. No table shaping, no field extraction,
   no schema.
 - No vendor-specific retry or rate-limit numbers. The package offers the
@@ -130,11 +127,11 @@ install.packages("biohttp", repos = "https://samuelbharti.r-universe.dev")
 | Phase | State |
 | --- | --- |
 | 0. Scaffold | done |
-| 1. Port the transport from `multi-variant-reviewer` | done |
+| 1. The transport, ported from a working implementation | done |
 | 2. Apply the envelope contract, write the vignette | done |
 | 2b. Batched calls and query-string credentials | done |
 | 3. Publish to r-universe, tag 0.1.0, pkgdown site live | not started |
-| 4. Pilot migration of `variant-reviewer`, including the Docker rebuild | not started |
+| 4. First production migration onto the package | not started |
 
 ## Using it
 

@@ -8,8 +8,8 @@ biohttp is the transport layer, and nothing else. Before opening a pull request,
 check that the change fits inside these lines:
 
 - No Shiny, in Imports, in Suggests, or in tests.
-- No service-specific knowledge. Nothing here knows what a gene is. Service
-  clients live in `bioclients`.
+- No service-specific knowledge. Nothing here knows what a gene is. That belongs
+  in a client package built on top.
 - No parsing beyond JSON and text bodies. No table shaping, no field extraction,
   no schema.
 - No vendor-specific retry or rate-limit numbers. The package offers the
@@ -50,8 +50,8 @@ today. Reach for one of those before proposing a compiled language here.
 
 - `dev` is the integration branch. **Every pull request targets `dev`**, not
   `main`. `dev` is merged into `main` at a release.
-- Both `main` and `dev` are protected. Do not commit to either directly. The
-  `no-commit-to-branch` hook blocks it locally.
+- Do not commit to `main` or `dev` directly. The `no-commit-to-branch` hook
+  blocks it locally.
 - Name branches with a type prefix: `feat/<slug>`, `fix/<slug>`, or
   `chore/<slug>`.
 - Use Conventional Commit messages, for example `feat: add throttle argument`.
@@ -105,7 +105,7 @@ Tests are offline. No test hits a real host, and CI runs with no network. Use
 `webfakes` to serve fixtures.
 
 Three things get an explicit, obviously named test, because they are the rules
-the four original copies of this code disagreed about:
+a hand-rolled HTTP layer most often gets wrong:
 
 1. Only a transport failure trips the circuit breaker. A 5xx or an unreadable
    body does not, because a response in hand proves the host is reachable.

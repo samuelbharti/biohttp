@@ -16,9 +16,9 @@
 # So this file batches within a host, and it groups by host to keep that true
 # even when a caller passes a mixed list. Host groups run one after another. A
 # caller that wants a dozen DIFFERENT services answered at once wants process
-# level concurrency, not this: see multi-variant-reviewer/R/parallel.R, which
-# pins each host to its own mirai daemon. That belongs in an app, because it
-# needs a daemon pool with a lifecycle, and this package does not manage one.
+# level concurrency, not this: one daemon per host, through something like
+# mirai. That belongs in an app, because it needs a daemon pool with a
+# lifecycle, and this package does not manage one.
 #
 # The other documented limitation is that max_tries is not respected under
 # parallel, and that httr2's own circuit breaker never fires there. The second
