@@ -20,7 +20,7 @@ warn_once <- function(id, message) {
 #' Convert an envelope to the old four-field shape
 #'
 #' @description
-#' **Deprecated.** Scheduled for removal in 0.1.0's successor line, 0.3.0.
+#' **Deprecated.** Scheduled for removal in 0.3.0.
 #'
 #' Translates an [envelope()] into the shape `variant-reviewer` and `genescout`
 #' return today:
