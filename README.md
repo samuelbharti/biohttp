@@ -2,13 +2,16 @@
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/samuelbharti/biohttp/actions/workflows/r.yml/badge.svg)](https://github.com/samuelbharti/biohttp/actions/workflows/r.yml)
+[![r-universe](https://samuelbharti.r-universe.dev/badges/biohttp)](https://samuelbharti.r-universe.dev/biohttp)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21731864.svg)](https://doi.org/10.5281/zenodo.21731864)
 <!-- badges: end -->
 
 One HTTP transport layer for R clients of biological web services.
 
-> **Status:** 0.1.0. The contract is public. Documentation is at
-> <https://www.samuelbharti.com/biohttp/>. Not on r-universe yet.
+> **Status:** 0.1.0, released. Install from
+> [r-universe](https://samuelbharti.r-universe.dev/biohttp), read the docs at
+> <https://www.samuelbharti.com/biohttp/>. The envelope contract is fixed from
+> here; changing it is a breaking change.
 
 ## Why
 
@@ -149,7 +152,7 @@ Prefer r-universe unless you specifically need an unreleased commit.
 | 1. The transport, ported from a working implementation | done |
 | 2. Apply the envelope contract, write the vignette | done |
 | 2b. Batched calls and query-string credentials | done |
-| 3. Publish to r-universe, tag 0.1.0, pkgdown site live | not started |
+| 3. Publish to r-universe, tag 0.1.0, pkgdown site live | done |
 | 4. First production migration onto the package | not started |
 
 ## Using it
