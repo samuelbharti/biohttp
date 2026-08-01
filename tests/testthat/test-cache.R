@@ -189,7 +189,7 @@ test_that("a degraded cache still serves and stores in memory", {
   cache_reset()
 })
 
-test_that("cache_reset drops the store so settings are re-read", {
+test_that("cache_reset empties the cache", {
   cache_reset()
   key <- cache_key("s", "persisted")
   cache()$set(key, status_ok(data = list(x = 1)))
@@ -197,4 +197,56 @@ test_that("cache_reset drops the store so settings are re-read", {
 
   cache_reset()
   expect_true(cachem::is.key_missing(cache()$get(key)))
+})
+
+test_that("a reference held across a reset still points at the live cache", {
+  # Dropping the store unconditionally orphans anything a caller kept. Writes
+  # through the orphan go where nothing else can see them and reads return
+  # stale entries, with no error and no warning. The only symptom is a hit rate
+  # quietly falling to zero.
+  cache_reset()
+  held <- cache()
+  held$set(cache_key("s", "before"), status_ok(data = 1, source = "s"))
+
+  cache_reset()
+
+  expect_identical(held, cache())
+  # A write through the held reference is visible to the rest of the package.
+  key <- cache_key("s", "after")
+  held$set(key, status_ok(data = 2, source = "s"))
+  expect_false(is.null(cache_get(key)))
+  cache_reset()
+})
+
+test_that("an in-place reset still clears every entry", {
+  # Keeping the object must not mean keeping its contents.
+  cache_reset()
+  held <- cache()
+  for (i in 1:3) {
+    held$set(cache_key("s", paste0("e", i)), status_ok(data = i, source = "s"))
+  }
+  expect_length(held$keys(), 3)
+
+  cache_reset()
+
+  expect_length(held$keys(), 0)
+  cache_reset()
+})
+
+test_that("changed settings still rebuild the store", {
+  # The other half of the contract, and the reason cache_reset() cannot simply
+  # always clear in place. Test isolation depends on a reset picking up a
+  # changed BIOHTTP_CACHE_DIR or BIOHTTP_CACHE_DISK.
+  withr::local_envvar(BIOHTTP_CACHE_DISK = "")
+  cache_reset()
+  memory_only <- cache()
+  expect_identical(class(memory_only)[1], "cache_mem")
+
+  dir <- withr::local_tempdir()
+  withr::local_envvar(BIOHTTP_CACHE_DISK = "true", BIOHTTP_CACHE_DIR = dir)
+  cache_reset()
+
+  expect_identical(class(cache())[1], "cache_layered")
+  expect_false(identical(memory_only, cache()))
+  cache_reset()
 })

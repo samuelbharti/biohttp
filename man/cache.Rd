@@ -14,6 +14,11 @@ The \code{cachem} object backing \code{\link[=cached]{cached()}}. Memory-only un
 \code{BIOHTTP_CACHE_DISK} asks for the disk tier, in which case the two are
 layered. Built on first use.
 }
+\details{
+It is safe to hold the returned object. \code{\link[=cache_reset]{cache_reset()}} clears it in place
+rather than replacing it, unless a cache setting has changed, in which case a
+differently configured store genuinely has to be built. See \code{\link[=cache_reset]{cache_reset()}}.
+}
 \examples{
 cache_reset()
 class(cache())[1]

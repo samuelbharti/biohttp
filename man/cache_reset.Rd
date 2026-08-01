@@ -2,7 +2,7 @@
 % Please edit documentation in R/cache.R
 \name{cache_reset}
 \alias{cache_reset}
-\title{Drop the cache store}
+\title{Empty the cache}
 \usage{
 cache_reset()
 }
@@ -10,11 +10,29 @@ cache_reset()
 \code{NULL}, invisibly.
 }
 \description{
-Forgets the singleton so the next \code{\link[=cache]{cache()}} rebuilds it, picking up any
-changed environment settings. Tests use this to isolate, after pointing
-\code{BIOHTTP_CACHE_DIR} at a fresh tempdir.
+Removes every entry. Which of two things happens underneath depends on
+whether the cache settings have changed since the store was built:
+}
+\details{
+\describe{
+\item{Settings unchanged}{The existing store is cleared in place, so a
+reference taken from \code{\link[=cache]{cache()}} earlier stays valid and keeps pointing at
+the live cache. This is the ordinary case.}
+\item{Settings changed}{The store is dropped so the next \code{\link[=cache]{cache()}} builds
+one from the new settings. Tests rely on this after pointing
+\code{BIOHTTP_CACHE_DIR} at a fresh tempdir or toggling
+\code{BIOHTTP_CACHE_DISK}.}
+}
+
+The in-place branch exists because dropping unconditionally silently orphans
+any held reference: writes through it go somewhere nothing else can see, and
+the only symptom is a hit rate quietly falling to zero. A reference held
+across a genuine settings change is still orphaned, but nothing changes cache
+settings mid-run except a test suite, and those do not hold references.
 }
 \examples{
+held <- cache()
 cache_reset()
+identical(held, cache())
 
 }
