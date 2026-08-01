@@ -169,6 +169,56 @@ test_that("get_json_many performs only the entries the cache is missing", {
   expect_identical(calls, 4L)
 })
 
+test_that("a repeated query in one batch is a single request", {
+  # The cache cannot collapse these on its own. Everything in a batch is in
+  # flight at the same time, so the duplicate is dispatched before the original
+  # has an entry to serve.
+  breaker_reset()
+  cache_reset()
+  calls <- 0L
+  httr2::local_mocked_responses(function(req) {
+    calls <<- calls + 1L
+    json_batch_response('{"ok":true}')
+  })
+
+  res <- get_json_many(
+    "https://mock.test",
+    "query",
+    list(list(q = "A"), list(q = "B"), list(q = "A")),
+    source = "S"
+  )
+
+  expect_identical(calls, 2L)
+  # Every position still gets an answer, in the order it was asked.
+  expect_length(res, 3)
+  expect_true(all(vapply(res, function(r) isTRUE(r$ok), logical(1))))
+  expect_identical(res[[1]]$data, res[[3]]$data)
+})
+
+test_that("a repeated failing query is not cached by the dedupe path", {
+  # Fanning one result out to several positions must not become a back door
+  # around the success-only rule.
+  breaker_reset()
+  cache_reset()
+  calls <- 0L
+  httr2::local_mocked_responses(function(req) {
+    calls <<- calls + 1L
+    httr2::response(status_code = 503)
+  })
+
+  get_json_many(
+    "https://mock.test",
+    "query",
+    list(list(q = "A"), list(q = "A")),
+    source = "S"
+  )
+  expect_identical(calls, 1L)
+
+  # Nothing was stored, so asking again goes back out.
+  get_json_many("https://mock.test", "query", list(list(q = "A")), source = "S")
+  expect_identical(calls, 2L)
+})
+
 test_that("a batch and a single call share cache entries both ways", {
   # The keys have to be built identically or a warm entry is invisible to the
   # other entry point, which would quietly double the request count.
