@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: If you use biohttp in your work, please cite it as below.
+title: "biohttp: Normalized HTTP Transport with Circuit Breaking and Caching"
+abstract: >-
+  An HTTP transport layer for R clients of web services. Calls return a
+  normalized result value rather than raising a condition, so transport
+  failure, a non-success status code, and an unreadable response body are
+  three distinct outcomes a caller can branch on. Per-host circuit breaking,
+  retry, throttling, header redaction, and a success-only cache are provided
+  as defaults.
+type: software
+version: 0.1.0
+authors:
+  - family-names: Bharti
+    given-names: Samuel
+    email: samuelbharti.io@gmail.com
+    orcid: https://orcid.org/0000-0003-4190-7058
+repository-code: https://github.com/samuelbharti/biohttp
+url: https://www.samuelbharti.com/biohttp/
+license: MIT
+keywords:
+  - http
+  - api-client
+  - circuit-breaker
+  - caching
+  - r

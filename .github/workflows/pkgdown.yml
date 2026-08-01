@@ -1,0 +1,77 @@
+name: pkgdown
+
+# A pull request into main builds the site to prove it still builds. Only a
+# push to main publishes it, which happens when dev is merged in at a release.
+# Nothing on a feature branch or a pull request into dev runs here at all;
+# build the site locally with `pkgdown::build_site(preview = FALSE)` while
+# working. See CONTRIBUTING.md.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Two deploys must never overlap, but a release already under way should finish
+# rather than be cancelled halfway. Only a pull request build is disposable.
+concurrency:
+  group: pkgdown-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: build
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::pkgdown, local::.
+          needs: website
+
+      # dest_dir has to be passed explicitly. build_site_github_pages() defaults
+      # it to "docs", and that default overrides the destination set in
+      # _pkgdown.yml, so the site was being written somewhere the upload step
+      # was not looking. docs/ is also where the working notes live locally,
+      # which is why the site was given its own directory in the first place.
+      - name: Build pkgdown site
+        run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE, dest_dir = "_site")
+        shell: Rscript {0}
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+  # Publish only from main. A pull request stops after build, so the site is
+  # proven to build without anything being published.
+  #
+  # This needs Pages enabled on the repository with "GitHub Actions" as the
+  # source. Until that is done the job fails while the build job still passes,
+  # so a pull request is never blocked by it.
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    name: deploy
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

@@ -1,0 +1,112 @@
+url: https://www.samuelbharti.com/biohttp/
+
+# pkgdown defaults to docs/, but docs/local/ holds the working plans, so the
+# generated site gets its own directory instead of sharing one.
+destination: _site
+
+template:
+  bootstrap: 5
+  light-switch: true
+  bslib:
+    primary: "#1a6b54"
+    base_font: {google: "Source Sans 3"}
+    heading_font: {google: "Bricolage Grotesque"}
+    code_font: {google: "JetBrains Mono"}
+    border-radius: "0.25rem"
+
+home:
+  title: biohttp
+  description: >
+    One HTTP transport layer for R clients of biological web services.
+
+navbar:
+  structure:
+    left: [intro, reference, news]
+    right: [github]
+  components:
+    github:
+      icon: fab fa-github
+      href: https://github.com/samuelbharti/biohttp
+
+reference:
+  - title: Make a call
+    desc: >
+      The entry points. Each one assembles the request, applies the shared
+      defaults, performs it, and caches a success.
+    contents:
+      - get_json
+      - post_json
+      - get_text
+
+  - title: Ask many questions at once
+    desc: >
+      For many questions to one source. Only the entries the cache is missing
+      reach the network.
+    contents:
+      - get_json_many
+      - post_json_many
+      - perform_many
+
+  - title: Build and perform your own request
+    desc: For a call the wrappers do not cover.
+    contents:
+      - req_defaults
+      - perform
+      - perform_text
+      - user_agent
+      - is_transient
+
+  - title: The result envelope
+    desc: >
+      One return shape for every outcome. Nothing here raises on an HTTP or a
+      parse failure.
+    contents:
+      - envelope
+      - status_constructors
+      - STATUS_LEVELS
+      - body_or_null
+      - classify_http
+      - classify_condition
+
+  - title: Failures
+    contents:
+      - http_error_message
+      - graphql_error
+
+  - title: Credentials
+    desc: >
+      For a service that takes its key in the query string rather than a
+      header. See SECURITY.md for the rule on which belongs where.
+    contents:
+      - redact_secrets
+
+  - title: Circuit breaker
+    desc: >
+      Per-host state. Only a transport failure counts against a host; a 5xx or
+      an unreadable body does not.
+    contents:
+      - breaker_open
+      - breaker_record
+      - breaker_reset
+
+  - title: Cache
+    desc: Success-only, memory by default, opt-in disk tier.
+    contents:
+      - cache
+      - cache_key
+      - cached
+      - cache_reset
+
+  - title: Utilities
+    contents:
+      - is_blank
+      - pluck_at
+
+  - title: Migration
+    desc: For an app moving off its own HTTP layer. Deprecated on arrival.
+    contents:
+      - as_legacy_envelope
+
+  - title: Package
+    contents:
+      - biohttp-package

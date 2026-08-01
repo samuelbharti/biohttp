@@ -1,0 +1,333 @@
+---
+title: "Writing a client against biohttp"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Writing a client against biohttp}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+library(biohttp)
+```
+
+biohttp is the transport layer under a family of bio-database clients. It knows
+how to make an HTTP call and report what happened. It does not know what a gene
+is, and it never will.
+
+This is what you need to know to write a client on top of it.
+
+## The one rule
+
+**A call returns a value. It never raises.**
+
+That is the whole contract. You do not write `tryCatch()` around a biohttp call,
+because there is nothing to catch. A DNS failure, a 503, a 200 carrying an HTML
+maintenance page: all three come back as a value you branch on.
+
+```{r}
+res <- httr2::with_mocked_responses(
+  list(httr2::response(
+    status_code = 200,
+    headers = list(`content-type` = "application/json"),
+    body = charToRaw('{"symbol":"BRCA1","entrezgene":672}')
+  )),
+  get_json("https://mygene.info/v3", path = "gene/672", source = "MyGene")
+)
+
+res$ok
+res$status
+res$data$symbol
+```
+
+## What comes back
+
+Every call returns the same eight fields.
+
+| Field | What it holds |
+| --- | --- |
+| `ok` | `TRUE` only when `status` is `"ok"`. Derived, so the two cannot disagree. |
+| `status` | One of the seven levels below. This is what you branch on. |
+| `http` | The HTTP code, or `NA_integer_` when no response arrived. |
+| `data` | The parsed body on success. |
+| `source` | The label you passed, used in the message. |
+| `error` | One sentence fit to show a user. Never technical. |
+| `detail` | The technical cause, for a log. Never shown to a user. |
+| `ts` | When the envelope was built. |
+
+The `error` and `detail` split is deliberate. Render `error` in the interface,
+write `detail` to the log, and a stack trace never reaches a user while the log
+never loses one.
+
+### The seven statuses
+
+```{r}
+STATUS_LEVELS
+```
+
+They are ordered best to worst. The three that people miss:
+
+- **`no_data`** is an answer, not a fault. The source was reached and has
+  nothing for this query. A 404 from a lookup API usually means "no such
+  record", which is information.
+- **`skipped`** means nothing was sent, because the host's circuit breaker was
+  open. Distinguishing this from `error` is why the enum exists: a skipped call
+  is not evidence about the query, only about the host.
+- **`stale`** carries real data that is past its freshness window. `ok` is
+  `FALSE` so it never gets cached, but the body is still there.
+
+## Branching
+
+Handle the cases you can act on and let the rest fall through:
+
+```{r}
+render <- function(res) {
+  switch(res$status,
+    ok = paste("got", length(res$data), "fields"),
+    no_data = "nothing found for that query",
+    skipped = "source paused, try again shortly",
+    rate_limited = "slow down",
+    res$error
+  )
+}
+
+render(status_ok(data = list(a = 1, b = 2), source = "MyGene"))
+render(status_no_data(source = "MyGene"))
+render(status_error(source = "MyGene", http = 503L))
+```
+
+If you genuinely do not care why a call failed, `body_or_null()` collapses it:
+
+```{r}
+body_or_null(status_ok(data = list(n = 1)))
+body_or_null(status_error(source = "MyGene"))
+```
+
+Reach for that when the failure is not actionable, not to avoid reading the
+envelope.
+
+## Building a client
+
+A client is a thin function per endpoint. Assemble, call, parse. Notice there is
+no error handling in it, because there is nothing to handle.
+
+```{r}
+mygene_query <- function(symbol, species = "human") {
+  res <- get_json(
+    "https://mygene.info/v3",
+    path = "query",
+    query = list(q = symbol, species = species),
+    source = "MyGene"
+  )
+  if (!res$ok) {
+    return(res)
+  }
+  # Reshape the body, and return an envelope so the caller's branching still
+  # works. Never return a bare value on success and NULL on failure: that is the
+  # shape this package exists to replace.
+  status_ok(
+    data = pluck_at(res$data, "hits", default = list()),
+    source = "MyGene",
+    http = res$http
+  )
+}
+```
+
+Two things to copy from that:
+
+1. **Pass `source`.** It is what makes the `error` sentence say "MyGene is
+   temporarily unavailable" rather than "API is temporarily unavailable".
+2. **Return an envelope, not a bare value.** A client that returns `NULL` on
+   failure throws away the reason, and its caller has to invent a convention.
+
+### Credentials
+
+Pass a token as a header, never in the URL. It is redacted from anything
+printable, and it stays out of access logs:
+
+```{r}
+req <- req_defaults(
+  httr2::request("https://example.org/v1"),
+  headers = list(Authorization = "Bearer a-real-token")
+)
+# The value is not in the printed request.
+any(grepl("a-real-token", capture.output(print(req)), fixed = TRUE))
+```
+
+The wrappers take `headers` too, and fold them into the cache key, so two
+callers with different tokens never share a cached response.
+
+### Rate limits
+
+The package supplies the mechanism; you supply the numbers, because only you
+know what the service asks for:
+
+```{r, eval = FALSE}
+get_json(
+  "https://example.org/v1",
+  path = "lookup",
+  source = "Example",
+  throttle = list(capacity = 10, fill_time_s = 60)
+)
+```
+
+## Asking many questions at once
+
+One question per call is the wrong unit for most clients. A gene list, a variant
+list, a panel: the shape is nearly always many questions to one source, and
+asking them one at a time spends the round trip over and over on a call that is
+already almost entirely waiting.
+
+`get_json_many()` takes a list of queries instead of one:
+
+```{r, eval = FALSE}
+res <- get_json_many(
+  "https://mygene.info/v3",
+  path = "query",
+  queries = lapply(c("BRCA1", "TP53", "EGFR"), function(g) list(q = g)),
+  source = "MyGene",
+  throttle = list(capacity = 10, fill_time_s = 60)
+)
+
+vapply(res, function(r) r$status, character(1))
+#> [1] "ok" "ok" "ok"
+```
+
+Results come back **in the order you asked**, so you can zip them onto your
+inputs by position. `post_json_many()` is the same idea for a JSON or GraphQL
+endpoint.
+
+The part that pays is the cache. Entries already held are served without a
+request, and only the rest go out. Ask for fifty genes when forty are warm and
+ten requests leave the process. The keys are built exactly the way `get_json()`
+builds its own, so a batch reuses what a single call warmed and the other way
+around.
+
+### One source, not a mix
+
+These are for many questions to **one** source. httr2 applies `req_throttle()`
+and `req_retry()` across the whole list rather than per request, which as its own
+documentation puts it makes `req_perform_parallel()` "most suitable for
+performing many parallel requests to the same host, rather than a mix of
+different hosts". A throttled request to one host would make an unthrottled
+request to another wait behind it.
+
+Requests are grouped by host so that stays true even if you pass a mixed list,
+and each host's throttle bucket stays honest. Host groups run one after another.
+
+If what you want is a dozen *different* services answered at once, that is
+process-level concurrency with a worker pool, and it belongs in your application.
+This package does not manage a daemon pool and is not trying to.
+
+### Supply a throttle
+
+httr2's own advice is never to perform in parallel without `req_throttle()`,
+because it is otherwise very easy to flood a source with simultaneous requests.
+Public biological data sources are typically run on a research budget. Pass a
+`throttle`.
+
+## The circuit breaker
+
+After a few consecutive **transport** failures, a host is skipped for a cooldown
+rather than waited on. It heals itself; there is nothing to reset.
+
+The rule that matters:
+
+> Only a transport failure counts against a host. Any HTTP response at all,
+> including a 500 and including a 200 whose body will not parse, proves the host
+> is reachable and clears the count.
+
+This is not a detail. A source that starts returning HTML error pages with a 200
+is broken, but it is *up*, and taking it out of rotation would turn a partial
+outage into a total one. This is the rule a hand-rolled breaker most often gets
+wrong, and a large part of why the package exists.
+
+## Caching
+
+Successes are cached. Failures never are.
+
+A cache that stores a failure poisons itself for the life of the process: every
+later lookup serves the stored failure instead of retrying. Storing only
+successes means a transient outage resolves itself the moment the source comes
+back.
+
+Memory only by default. The disk tier is opt-in, because a library should not
+start writing to somebody's disk because they installed it:
+
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `BIOHTTP_CACHE_TTL` | 1800 | Memory tier max age, seconds |
+| `BIOHTTP_CACHE_DISK` | off | Set to `true` to add the disk tier |
+| `BIOHTTP_CACHE_DIR` | `data/cache` | Where the disk tier lives |
+| `BIOHTTP_CACHE_SALT` | empty | Set per deployment |
+
+Set `BIOHTTP_CACHE_SALT` if you enable the disk tier. Without it a shared cache
+directory can collide across app versions, and it leaks which queries were run
+to anyone able to probe it.
+
+If the disk directory turns out to be unwritable, the cache degrades to
+memory-only rather than failing, which is what lets the same code run in a
+container with no writable volume.
+
+## GraphQL
+
+A GraphQL error arrives inside an HTTP 200, as a top-level `errors` array, so a
+2xx is not enough to call the request successful. `graphql_error()` folds both
+checks into one:
+
+```{r}
+res <- status_ok(data = list(errors = list(list(message = "bad field"))))
+bad <- graphql_error(res, "gnomAD")
+bad$status
+```
+
+It returns `NULL` when the call genuinely succeeded, so the idiom is:
+
+```{r, eval = FALSE}
+res <- post_json(url, body = list(query = q), source = "gnomAD")
+bad <- graphql_error(res, "gnomAD")
+if (!is.null(bad)) {
+  return(bad)
+}
+```
+
+## Migrating an existing app
+
+If your app already returns the older four-field shape, `as_legacy_envelope()`
+translates for you so a migration lands as a reviewable diff:
+
+```{r}
+old <- as_legacy_envelope(status_ok(data = list(n = 1), source = "MyGene"))
+str(old)
+```
+
+It is deprecated on arrival and scheduled for removal in 0.3.0. The old shape
+cannot express `skipped`, and it collapses `error` and `detail` into one field.
+Use it to get the migration merged, then delete the call sites.
+
+## Testing your client
+
+Test offline. biohttp's own suite never touches a real host, and yours should
+not either.
+
+For everything except retry, `httr2::with_mocked_responses()` is enough:
+
+```{r, eval = FALSE}
+httr2::with_mocked_responses(
+  list(httr2::response(status_code = 503)),
+  expect_identical(mygene_query("BRCA1")$status, "error")
+)
+```
+
+Retry is the exception. Mocking replaces the transport *below* the retry loop,
+so a mocked 503 arrives exactly once no matter what `max_tries` says. If you
+need to test retry, run a real local server with `webfakes`, the way
+`tests/testthat/test-retry.R` does.
+
+Worth asserting in your own suite, because these are the things that quietly
+regress:
+
+- A failure is never cached.
+- A 5xx does not trip the breaker.
+- A token never appears in a printed request.

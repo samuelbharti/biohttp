@@ -1,0 +1,26 @@
+name: lint
+
+# Only a pull request into main runs this. The same hooks run on every commit
+# through the local prek install, so this is a backstop rather than the first
+# line of defence. See CONTRIBUTING.md.
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+      - name: Run prek hooks
+        run: uvx prek run --all-files --show-diff-on-failure --color=always
+        env:
+          # This hook only makes sense on a developer machine, not in CI.
+          SKIP: no-commit-to-branch
