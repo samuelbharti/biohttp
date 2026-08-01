@@ -27,7 +27,7 @@ test_that("a failure maps with its message and its detail", {
   expect_equal(old$status, 503)
   expect_null(old$data)
   expect_identical(old$error, "gnomAD is temporarily unavailable.")
-  # variant-reviewer's call sites log detail, so dropping it would break them.
+  # Call sites that log detail would break if the shim dropped it.
   expect_identical(old$detail, "gnomAD returned HTTP 503")
 })
 

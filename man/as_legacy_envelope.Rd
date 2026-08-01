@@ -16,14 +16,14 @@ A list with \code{ok}, \code{status} (the HTTP code), \code{data}, \code{error},
 \description{
 \strong{Deprecated.} Scheduled for removal in 0.3.0.
 
-Translates an \code{\link[=envelope]{envelope()}} into the shape \code{variant-reviewer} and \code{genescout}
-return today:
+Translates an \code{\link[=envelope]{envelope()}} into the four-field shape a hand-rolled HTTP layer
+commonly returns:
 
 \if{html}{\out{<div class="sourceCode r">}}\preformatted{list(ok = TRUE, status = 200L, data = <parsed>, error = NULL)
 }\if{html}{\out{</div>}}
 
-\code{detail} is carried through as a fifth field, because \code{variant-reviewer}'s
-call sites log it and dropping it would break them.
+\code{detail} is carried through as a fifth field, because call sites that log it
+would otherwise break on adoption.
 }
 \section{Why this is deprecated on arrival}{
 

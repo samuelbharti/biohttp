@@ -240,8 +240,8 @@ The rule that matters:
 
 This is not a detail. A source that starts returning HTML error pages with a 200
 is broken, but it is *up*, and taking it out of rotation would turn a partial
-outage into a total one. Four hand-written copies of this layer disagreed about
-it, which is a large part of why the package exists.
+outage into a total one. This is the rule a hand-rolled breaker most often gets
+wrong, and a large part of why the package exists.
 
 ## Caching
 

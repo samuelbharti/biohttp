@@ -1,8 +1,9 @@
 # The migration shim.
 #
-# Deprecated from birth, on purpose. It exists so `variant-reviewer` and
-# `genescout` can adopt biohttp without rewriting every call site in the same
-# pull request, and for no other reason. Nothing new should call it.
+# Deprecated from birth, on purpose. It exists so an application that already
+# returns the older four-field shape can adopt biohttp without rewriting every
+# call site in the same pull request, and for no other reason. Nothing new
+# should call it.
 
 deprecation_warned <- new.env(parent = emptyenv())
 
@@ -22,15 +23,15 @@ warn_once <- function(id, message) {
 #' @description
 #' **Deprecated.** Scheduled for removal in 0.3.0.
 #'
-#' Translates an [envelope()] into the shape `variant-reviewer` and `genescout`
-#' return today:
+#' Translates an [envelope()] into the four-field shape a hand-rolled HTTP layer
+#' commonly returns:
 #'
 #' ```r
 #' list(ok = TRUE, status = 200L, data = <parsed>, error = NULL)
 #' ```
 #'
-#' `detail` is carried through as a fifth field, because `variant-reviewer`'s
-#' call sites log it and dropping it would break them.
+#' `detail` is carried through as a fifth field, because call sites that log it
+#' would otherwise break on adoption.
 #'
 #' @section Why this is deprecated on arrival:
 #' The old shape cannot express two things the new one can. It has no way to say

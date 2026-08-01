@@ -4,8 +4,8 @@
 # documented as never firing under req_perform_parallel(), which is exactly how
 # a fan-out runs, so this one is explicit.
 #
-# The rule that matters, and the one the four original copies of this code
-# disagreed about: only a TRANSPORT failure counts against a host. Any HTTP
+# The rule that matters, and the one a hand-rolled breaker most often gets
+# wrong: only a TRANSPORT failure counts against a host. Any HTTP
 # response at all, even a 500 or a body that will not parse, proves the host is
 # reachable and clears the count. Body parsing must never be mistaken for the
 # host being down, or one source returning HTML error pages takes itself out of

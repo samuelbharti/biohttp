@@ -24,8 +24,8 @@
 #' @return A single string.
 #'
 #' @examples
-#' user_agent("variant-reviewer", "1.2.0", email = "ops@example.org")
-#' user_agent("genescout", "0.4.0")
+#' user_agent("my-shiny-app", "1.2.0", email = "ops@example.org")
+#' user_agent("my-client-package", "0.4.0")
 #'
 #' @export
 user_agent <- function(
