@@ -42,13 +42,20 @@ apply_secret_query <- function(req, secret_query) {
 
 #' Remove secret values from a string
 #'
-#' Replaces the literal value of each secret wherever it appears. Used on the
-#' messages built from a transport failure, because a curl error normally
-#' carries the URL that failed and that URL may hold a query-string credential.
+#' Replaces each secret wherever it appears, in both the form it was passed and
+#' the percent-encoded form a URL carries. Used on the messages built from a
+#' transport failure, because a curl error normally carries the URL that failed
+#' and that URL may hold a query-string credential.
 #'
 #' Matching on the value rather than on the parameter name is deliberate: the
 #' same secret can reach a message through a URL, a header dump, or a proxy
 #' error, and only the value is common to all three.
+#'
+#' Both forms have to be matched because a secret never reaches a URL in the
+#' form it was passed. `httr2::req_url_query()` percent-encodes it, so a key
+#' holding `+`, `/`, or `=`, which is an ordinary shape for a base64 key,
+#' arrives as `%2B`, `%2F`, and `%3D`. Matching only the raw value would let
+#' exactly those keys through into a logged `detail`.
 #'
 #' @param text A single string.
 #' @param secrets A named list of secret values, as passed to `secret_query`.
@@ -61,6 +68,12 @@ apply_secret_query <- function(req, secret_query) {
 #'   list(api_key = "abc123")
 #' )
 #'
+#' # The encoded form is caught too, which is the one a URL actually carries.
+#' redact_secrets(
+#'   "Could not resolve host: example.org/?api_key=ab%2Bcd",
+#'   list(api_key = "ab+cd")
+#' )
+#'
 #' @export
 redact_secrets <- function(text, secrets = NULL) {
   if (is.null(secrets) || length(secrets) == 0) {
@@ -71,10 +84,19 @@ redact_secrets <- function(text, secrets = NULL) {
   }
   for (value in secrets) {
     value <- as.character(value)
-    # A one-character or empty secret would turn the message into noise, and is
-    # not a credential worth protecting anyway.
-    if (length(value) == 1 && !is.na(value) && nchar(value) > 1) {
-      text <- gsub(value, "<redacted>", text, fixed = TRUE)
+    if (length(value) != 1 || is.na(value)) {
+      next
+    }
+    # curl_escape() is the encoder httr2 builds query strings with, so matching
+    # it is what keeps redaction in step with what was actually sent. Longest
+    # first, so a form that contains another cannot be left half replaced.
+    forms <- unique(c(value, curl::curl_escape(value)))
+    for (form in forms[order(nchar(forms), decreasing = TRUE)]) {
+      # A one-character or empty secret would turn the message into noise, and
+      # is not a credential worth protecting anyway.
+      if (nchar(form) > 1) {
+        text <- gsub(form, "<redacted>", text, fixed = TRUE)
+      }
     }
   }
   text

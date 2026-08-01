@@ -7,12 +7,17 @@
 # it declared here, biohttp installs cleanly and then fails on the first
 # get_json() call, which is the package's main entry point. It costs nothing in
 # practice, since shiny imports jsonlite directly and every consumer app has it.
-test_that("Imports stays at cachem, httr2, jsonlite, and rlang", {
+#
+# curl is on the list for redact_secrets(), which matches curl::curl_escape()
+# because that is the encoder httr2 builds query strings with. It is already a
+# hard Imports of httr2, so declaring it adds nothing to what a consumer
+# installs; it is named here because the package calls it directly.
+test_that("Imports stays at cachem, curl, httr2, jsonlite, and rlang", {
   desc <- system.file("DESCRIPTION", package = "biohttp")
   imports <- read.dcf(desc, "Imports")[[1]]
   declared <- trimws(strsplit(imports, ",")[[1]])
 
-  expect_setequal(declared, c("cachem", "httr2", "jsonlite", "rlang"))
+  expect_setequal(declared, c("cachem", "curl", "httr2", "jsonlite", "rlang"))
 })
 
 test_that("no Shiny dependency in any form", {
