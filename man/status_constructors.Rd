@@ -45,6 +45,10 @@ An envelope list, as described in \code{\link[=envelope]{envelope()}}.
 Shorthands for \code{\link[=envelope]{envelope()}} that fill in the user-facing \code{error} sentence for
 their status. \code{error} is what a user reads; \code{detail} is what a log records.
 }
+\details{
+The sentence comes from \code{\link[=status_message]{status_message()}}, so setting
+\code{biohttp.status_message} changes what these produce too.
+}
 \examples{
 status_ok(data = list(n = 1), source = "MyGene")
 status_no_data(source = "gnomAD", http = 404L)

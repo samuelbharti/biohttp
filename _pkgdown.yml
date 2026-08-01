@@ -72,7 +72,11 @@ reference:
       - classify_condition
 
   - title: Failures
+    desc: >
+      One sentence per outcome, in one place. Set `biohttp.status_message` to
+      supply your own wording or to localise.
     contents:
+      - status_message
       - http_error_message
       - graphql_error
 
