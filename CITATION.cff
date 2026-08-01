@@ -9,7 +9,7 @@ abstract: >-
   retry, throttling, header redaction, and a success-only cache are provided
   as defaults.
 type: software
-version: 0.0.0.9000
+version: 0.1.0
 authors:
   - family-names: Bharti
     given-names: Samuel
