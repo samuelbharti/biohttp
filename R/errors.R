@@ -144,7 +144,13 @@ http_error_message <- function(
   condition = NULL
 ) {
   status <- if (!is.na(http)) {
-    classify_http(http)
+    # A 2xx reaching a function whose whole job is describing a failure means
+    # the response arrived and was unusable anyway: a 200 carrying an HTML
+    # error page, or a body that will not parse. classify_http() calls that
+    # `ok`, which is right for the status enum and wrong here, because it would
+    # leave this returning nothing when the contract is a sentence.
+    classified <- classify_http(http)
+    if (identical(classified, "ok")) "error" else classified
   } else if (is.null(condition)) {
     "error"
   } else {

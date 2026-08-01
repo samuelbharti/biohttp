@@ -18,6 +18,46 @@ test_that("http_error_message says something actionable per failure class", {
   )
 })
 
+test_that("http_error_message always returns a sentence, even for a 2xx", {
+  # A 2xx gets here when the response arrived and was unusable anyway: a 200
+  # carrying an HTML error page, or a body that will not parse. The status enum
+  # calls that code `ok`, but this function's contract is a sentence, so it must
+  # not hand back nothing.
+  for (code in c(200L, 201L, 204L)) {
+    msg <- http_error_message("S", http = code)
+    expect_type(msg, "character")
+    expect_length(msg, 1L)
+    expect_match(msg, "Could not retrieve")
+  }
+})
+
+test_that("a 2xx with an unreadable body still reaches the caller with a message", {
+  # The end to end version of the above, which is the path that actually
+  # produces it.
+  breaker_reset()
+  cache_reset()
+  httr2::local_mocked_responses(function(req) {
+    httr2::response(
+      status_code = 200,
+      headers = list(`content-type` = "application/json"),
+      body = charToRaw("{not json")
+    )
+  })
+
+  res <- get_json("https://mock.test", path = "x", source = "S")
+
+  expect_identical(res$status, "error")
+  expect_match(res$error, "Could not retrieve")
+})
+
+test_that("a 408 says it timed out rather than something generic", {
+  # classify_http() has always called 408 a timeout, but the message used to be
+  # the generic one, so the envelope said `timeout` while the sentence a user
+  # read said "could not retrieve". They agree now.
+  expect_match(http_error_message("S", http = 408L), "took too long")
+  expect_identical(classify_http(408L), "timeout")
+})
+
 test_that("http_error_message never leaks technical detail to a user", {
   raw <- "curl: (6) Could not resolve host: gnomad.test"
   msg <- http_error_message("gnomAD", condition = simpleError(raw))

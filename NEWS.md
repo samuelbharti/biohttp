@@ -35,6 +35,10 @@ a transport contract meets an app that already had its own opinions.
   different sentences existed for "temporarily unavailable". They now share one
   set. `status_error()`'s default gains "Please try again." as a result, which is
   the only user-visible wording change.
+* A 408 now reads "took too long to respond" rather than the generic "could not
+  retrieve". `classify_http()` has always called 408 a timeout, so the envelope
+  said `timeout` while the sentence a user read said something else. They agree
+  now.
 * The vignette's cache table documents `BIOHTTP_CACHE_MAX_SIZE` and
   `BIOHTTP_CACHE_DISK_TTL`, which it had never listed.
 * A test asserts `DESCRIPTION`, `.zenodo.json` and `CITATION.cff` agree on the
