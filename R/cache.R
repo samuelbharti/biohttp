@@ -65,9 +65,16 @@ disk_tier <- function() {
 }
 
 build_cache <- function() {
+  # Three ceilings, because they bound different things and a cache can blow
+  # through one while sitting comfortably inside the others. max_size bounds
+  # bytes, which a long-running process answering many small responses can stay
+  # under while still accumulating far more entries than intended, so max_n
+  # bounds the count separately. Its default is cachem's own Inf, so a caller
+  # who does not set it sees no change.
   mem <- cachem::cache_mem(
     max_age = env_num("BIOHTTP_CACHE_TTL", 1800),
     max_size = env_num("BIOHTTP_CACHE_MAX_SIZE", 256 * 1024^2),
+    max_n = env_num("BIOHTTP_CACHE_MAX_N", Inf),
     evict = "lru"
   )
   if (!cache_disk_enabled()) {

@@ -88,6 +88,44 @@ test_that("every status level round-trips through the store intact", {
   }
 })
 
+test_that("the entry ceiling bounds the count, not just the bytes", {
+  # max_size bounds bytes. A process answering many small responses stays well
+  # under it while holding far more entries than intended, which is the case
+  # this ceiling exists for.
+  withr::local_envvar(BIOHTTP_CACHE_MAX_N = "2")
+  cache_reset()
+
+  for (i in 1:3) {
+    cache()$set(
+      cache_key("s", paste0("k", i)),
+      status_ok(data = i, source = "s")
+    )
+  }
+
+  expect_length(cache()$keys(), 2)
+  # Least recently used goes first, so the oldest is the one dropped.
+  expect_false(cache()$exists(cache_key("s", "k1")))
+  expect_true(cache()$exists(cache_key("s", "k3")))
+  cache_reset()
+})
+
+test_that("no entry ceiling is applied unless one is asked for", {
+  # cachem's own default is Inf. Reading an unset variable must not quietly
+  # introduce a bound that was never there.
+  withr::local_envvar(BIOHTTP_CACHE_MAX_N = "")
+  cache_reset()
+
+  for (i in 1:5) {
+    cache()$set(
+      cache_key("s", paste0("n", i)),
+      status_ok(data = i, source = "s")
+    )
+  }
+
+  expect_length(cache()$keys(), 5)
+  cache_reset()
+})
+
 test_that("the disk tier is off unless it is asked for", {
   # A library should not start writing to somebody's disk because they
   # installed it.
