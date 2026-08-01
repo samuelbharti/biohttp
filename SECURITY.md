@@ -44,6 +44,8 @@ comes back* must go in `headers`, which is part of the key.
   filename has to be listed in a tracked file.
 - For a file whose name itself would reveal something sensitive, add it to
   `.git/info/exclude`. That file is local and never committed.
-- Two backstops run automatically. The `detect-private-key` and
-  `detect-aws-credentials` hooks run locally on every commit, and gitleaks scans
-  the full history in CI.
+- Three backstops run automatically. The `detect-private-key`,
+  `detect-aws-credentials`, and `gitleaks` hooks all run locally on every
+  commit, so a credential is caught before it becomes a commit rather than
+  after it has been pushed. gitleaks then scans the full history again on a
+  pull request into `main`, before anything is released.
