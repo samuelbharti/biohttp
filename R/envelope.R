@@ -103,6 +103,9 @@ envelope <- function(
 #' Shorthands for [envelope()] that fill in the user-facing `error` sentence for
 #' their status. `error` is what a user reads; `detail` is what a log records.
 #'
+#' The sentence comes from [status_message()], so setting
+#' `biohttp.status_message` changes what these produce too.
+#'
 #' @inheritParams envelope
 #'
 #' @return An envelope list, as described in [envelope()].
@@ -128,7 +131,7 @@ status_no_data <- function(source = "API", http = NA_integer_, detail = NULL) {
     "no_data",
     source = source,
     http = http,
-    error = paste0("No ", source, " data was found for this query."),
+    error = status_message(source, "no_data", http = http),
     detail = detail
   )
 }
@@ -146,7 +149,7 @@ status_rate_limited <- function(source = "API", http = 429L, detail = NULL) {
     "rate_limited",
     source = source,
     http = http,
-    error = paste0(source, " is busy right now. Please try again in a moment."),
+    error = status_message(source, "rate_limited", http = http),
     detail = detail
   )
 }
@@ -157,7 +160,7 @@ status_timeout <- function(source = "API", detail = NULL) {
   envelope(
     "timeout",
     source = source,
-    error = paste0(source, " took too long to respond. Please try again."),
+    error = status_message(source, "timeout"),
     detail = detail
   )
 }
@@ -168,7 +171,7 @@ status_skipped <- function(source = "API", detail = NULL) {
   envelope(
     "skipped",
     source = source,
-    error = paste0(source, " was skipped (host temporarily unreachable)."),
+    error = status_message(source, "skipped"),
     detail = detail
   )
 }
@@ -185,7 +188,7 @@ status_error <- function(
     "error",
     source = source,
     http = http,
-    error = error %||% paste0(source, " is temporarily unavailable."),
+    error = error %||% status_message(source, "error", http = http),
     detail = detail
   )
 }
