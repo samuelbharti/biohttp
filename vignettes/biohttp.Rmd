@@ -172,6 +172,61 @@ get_json(
 )
 ```
 
+## Asking many questions at once
+
+One question per call is the wrong unit for most clients. A gene list, a variant
+list, a panel: the shape is nearly always many questions to one source, and
+asking them one at a time spends the round trip over and over on a call that is
+already almost entirely waiting.
+
+`get_json_many()` takes a list of queries instead of one:
+
+```{r, eval = FALSE}
+res <- get_json_many(
+  "https://mygene.info/v3",
+  path = "query",
+  queries = lapply(c("BRCA1", "TP53", "EGFR"), function(g) list(q = g)),
+  source = "MyGene",
+  throttle = list(capacity = 10, fill_time_s = 60)
+)
+
+vapply(res, function(r) r$status, character(1))
+#> [1] "ok" "ok" "ok"
+```
+
+Results come back **in the order you asked**, so you can zip them onto your
+inputs by position. `post_json_many()` is the same idea for a JSON or GraphQL
+endpoint.
+
+The part that pays is the cache. Entries already held are served without a
+request, and only the rest go out. Ask for fifty genes when forty are warm and
+ten requests leave the process. The keys are built exactly the way `get_json()`
+builds its own, so a batch reuses what a single call warmed and the other way
+around.
+
+### One source, not a mix
+
+These are for many questions to **one** source. httr2 applies `req_throttle()`
+and `req_retry()` across the whole list rather than per request, which as its own
+documentation puts it makes `req_perform_parallel()` "most suitable for
+performing many parallel requests to the same host, rather than a mix of
+different hosts". A throttled request to one host would make an unthrottled
+request to another wait behind it.
+
+Requests are grouped by host so that stays true even if you pass a mixed list,
+and each host's throttle bucket stays honest. Host groups run one after another.
+
+If what you want is a dozen *different* services answered at once, that is
+process-level concurrency with a worker pool, and it belongs in your application.
+This package does not manage a daemon pool and is not trying to.
+
+### Supply a throttle
+
+httr2's own advice is never to perform in parallel without `req_throttle()`,
+because it is otherwise very easy to flood a source with simultaneous requests.
+Public biological data sources are typically run on a research budget. Pass a
+`throttle`.
+
 ## The circuit breaker
 
 After a few consecutive **transport** failures, a host is skipped for a cooldown

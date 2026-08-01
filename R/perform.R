@@ -50,9 +50,18 @@
 #'
 #' @export
 perform <- function(req, source = "API") {
-  perform_with(req, source, function(resp) {
-    httr2::resp_body_json(resp, check_type = FALSE, simplifyVector = FALSE)
-  })
+  perform_with(req, source, read_json_body)
+}
+
+# The two body readers, named rather than inline so the parallel path in
+# parallel.R can ask for the same one by name and the JSON options cannot drift
+# between the serial and the batched entry points.
+read_json_body <- function(resp) {
+  httr2::resp_body_json(resp, check_type = FALSE, simplifyVector = FALSE)
+}
+
+read_text_body <- function(resp) {
+  httr2::resp_body_string(resp)
 }
 
 # The shared core. perform() and perform_text() differ only in how they read a
@@ -74,6 +83,21 @@ perform_with <- function(req, source, read_body) {
   # for the host being down. req_error() is disarmed in req_defaults(), so
   # req_perform() only throws on a genuine transport failure.
   resp <- tryCatch(httr2::req_perform(req), error = function(e) e)
+  classify_result(resp, source, host, read_body)
+}
+
+# Turn the outcome of a performed request into an envelope, and record what that
+# outcome means for the host.
+#
+# Split out of perform_with() so the batched path in parallel.R classifies
+# through exactly this function. The three failure classes are the reason this
+# package exists, and two copies of them is how the four app-local layers drifted
+# apart in the first place.
+#
+# `resp` is either an httr2 response or the condition raised when no response
+# arrived at all. req_perform() and req_perform_parallel(on_error = "continue")
+# both hand back that same pair of possibilities.
+classify_result <- function(resp, source, host, read_body) {
   if (inherits(resp, "condition")) {
     breaker_record(host, reachable = FALSE)
     return(envelope(
@@ -142,7 +166,7 @@ perform_with <- function(req, source, read_body) {
 #'
 #' @export
 perform_text <- function(req, source = "API") {
-  perform_with(req, source, httr2::resp_body_string)
+  perform_with(req, source, read_text_body)
 }
 
 # Assemble a GET request from a base URL, an optional path, and a query. Blank
