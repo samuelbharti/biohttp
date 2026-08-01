@@ -10,6 +10,7 @@ abstract: >-
   as defaults.
 type: software
 version: 0.1.0
+date-released: "2026-07-31"
 authors:
   - family-names: Bharti
     given-names: Samuel
