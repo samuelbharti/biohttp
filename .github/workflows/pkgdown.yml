@@ -1,15 +1,13 @@
 name: pkgdown
 
-# A pull request into main builds the site to prove it still builds. Only a
-# push to main publishes it, which happens when dev is merged in at a release.
-# Nothing on a feature branch or a pull request into dev runs here at all;
-# build the site locally with `pkgdown::build_site(preview = FALSE)` while
-# working. See CONTRIBUTING.md.
+# Every pull request builds the site to prove it still builds, into dev as well
+# as main. Only a push to main publishes it, which happens when dev is merged
+# in at a release. See CONTRIBUTING.md.
 on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+    branches: [main, dev]
   workflow_dispatch:
 
 permissions:
