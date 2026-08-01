@@ -14,6 +14,26 @@ the value is not printed when a request is inspected, logged, or included in an
 error message. If you find a path where a redacted header leaks into visible
 output, treat it as a security bug and report it as one.
 
+Some services take their credential in the query string instead, with no header
+form. NCBI E-utilities is the one this package was built against. httr2 has no
+redaction for query parameters, so `secret_query` handles it here:
+
+- The credential is attached at dispatch, inside `perform()`, so the request
+  object a caller holds never contains it and neither does `print(req)`.
+- It is excluded from the cache key, which is built from the URL before the
+  credential is attached.
+- `redact_secrets()` replaces the value in any message built from a failure,
+  because a curl error normally carries the URL that failed.
+
+A query-string credential still reaches the server's access logs, which is a
+property of the service and not something a client can fix. Prefer a header when
+a service offers one.
+
+`secret_query` is for a credential that changes a rate limit or a quota. Because
+it is deliberately excluded from the cache key, two calls that differ only in
+their credential are treated as the same call. A credential that changes *what
+comes back* must go in `headers`, which is part of the key.
+
 ## Keeping secrets out of the repository
 
 - The package itself needs no credentials. Any token is supplied by the caller

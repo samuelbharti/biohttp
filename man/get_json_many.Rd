@@ -14,7 +14,8 @@ get_json_many(
   headers = NULL,
   throttle = NULL,
   max_active = 6,
-  progress = FALSE
+  progress = FALSE,
+  secret_query = NULL
 )
 }
 \arguments{
@@ -42,6 +43,9 @@ not honor this under parallel performance.}
 
 \item{progress}{Passed to \code{httr2::req_perform_parallel()}. \code{FALSE} by
 default, because the usual caller is a Shiny app that renders its own.}
+
+\item{secret_query}{A named list of query-string credentials, applied to
+every request in the batch at dispatch. See \code{\link[=redact_secrets]{redact_secrets()}}.}
 }
 \value{
 A list of envelopes, the same length and order as \code{queries}.

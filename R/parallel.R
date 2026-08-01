@@ -70,6 +70,8 @@ group_by_host <- function(hosts) {
 #' @param max_active Maximum requests in flight at once.
 #' @param progress Passed to `httr2::req_perform_parallel()`. `FALSE` by
 #'   default, because the usual caller is a Shiny app that renders its own.
+#' @param secret_query A named list of query-string credentials, applied to
+#'   every request in the batch at dispatch. See [redact_secrets()].
 #'
 #' @return A list of envelopes, the same length and order as `reqs`. See
 #'   [envelope()].
@@ -99,12 +101,27 @@ perform_many <- function(
   reqs,
   source = "API",
   max_active = 6,
-  progress = FALSE
+  progress = FALSE,
+  secret_query = NULL
 ) {
-  perform_many_with(reqs, source, max_active, progress, read_json_body)
+  perform_many_with(
+    reqs,
+    source,
+    max_active,
+    progress,
+    read_json_body,
+    secret_query
+  )
 }
 
-perform_many_with <- function(reqs, source, max_active, progress, read_body) {
+perform_many_with <- function(
+  reqs,
+  source,
+  max_active,
+  progress,
+  read_body,
+  secret_query = NULL
+) {
   out <- vector("list", length(reqs))
   if (length(reqs) == 0) {
     return(out)
@@ -128,14 +145,23 @@ perform_many_with <- function(reqs, source, max_active, progress, read_body) {
     # on_error = "continue" is what keeps the contract: a transport failure
     # lands in the result list as a condition instead of aborting the batch, and
     # classify_result() already knows how to read that.
+    #
+    # As in perform_with(), the credential is attached here at dispatch, so the
+    # requests these were built from never carried it.
     resps <- httr2::req_perform_parallel(
-      reqs[idx],
+      lapply(reqs[idx], apply_secret_query, secret_query = secret_query),
       on_error = "continue",
       progress = progress,
       max_active = max_active
     )
     for (k in seq_along(idx)) {
-      out[[idx[k]]] <- classify_result(resps[[k]], source, host, read_body)
+      out[[idx[k]]] <- classify_result(
+        resps[[k]],
+        source,
+        host,
+        read_body,
+        secret_query
+      )
     }
   }
   out
@@ -171,7 +197,15 @@ recycle_arg <- function(x, n, what) {
 # requests, and a half-warm one becomes only as many as are genuinely unknown.
 # The keys are built exactly the way get_json() and post_json() build theirs, so
 # a batch reuses entries a single call warmed and the other way around.
-cached_many <- function(keys, reqs, source, max_active, progress, read_body) {
+cached_many <- function(
+  keys,
+  reqs,
+  source,
+  max_active,
+  progress,
+  read_body,
+  secret_query = NULL
+) {
   hits <- lapply(keys, cache_get)
   miss <- which(vapply(hits, is.null, logical(1)))
   if (length(miss) == 0) {
@@ -182,7 +216,8 @@ cached_many <- function(keys, reqs, source, max_active, progress, read_body) {
     source,
     max_active,
     progress,
-    read_body
+    read_body,
+    secret_query
   )
   for (k in seq_along(miss)) {
     res <- fetched[[k]]
@@ -249,7 +284,8 @@ get_json_many <- function(
   headers = NULL,
   throttle = NULL,
   max_active = 6,
-  progress = FALSE
+  progress = FALSE,
+  secret_query = NULL
 ) {
   n <- length(queries)
   paths <- recycle_arg(path, n, "path")
@@ -264,7 +300,15 @@ get_json_many <- function(
     },
     character(1)
   )
-  cached_many(keys, reqs, source, max_active, progress, read_json_body)
+  cached_many(
+    keys,
+    reqs,
+    source,
+    max_active,
+    progress,
+    read_json_body,
+    secret_query
+  )
 }
 
 #' POST many JSON bodies as one batch
@@ -311,7 +355,8 @@ post_json_many <- function(
   headers = NULL,
   throttle = NULL,
   max_active = 6,
-  progress = FALSE
+  progress = FALSE,
+  secret_query = NULL
 ) {
   reqs <- lapply(bodies, function(body) {
     req <- httr2::req_body_json(httr2::request(url), body)
@@ -328,5 +373,13 @@ post_json_many <- function(
     },
     character(1)
   )
-  cached_many(keys, reqs, source, max_active, progress, read_json_body)
+  cached_many(
+    keys,
+    reqs,
+    source,
+    max_active,
+    progress,
+    read_json_body,
+    secret_query
+  )
 }

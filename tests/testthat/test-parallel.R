@@ -61,7 +61,7 @@ test_that("a batch classifies through the same code path as perform", {
   expect_true(is.function(classify_result))
   expect_identical(
     names(formals(classify_result)),
-    c("resp", "source", "host", "read_body")
+    c("resp", "source", "host", "read_body", "secret_query")
   )
 })
 

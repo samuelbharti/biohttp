@@ -4,13 +4,17 @@
 \alias{perform_text}
 \title{Perform a request and return the body as text}
 \usage{
-perform_text(req, source = "API")
+perform_text(req, source = "API", secret_query = NULL)
 }
 \arguments{
 \item{req}{An httr2 request, prepared with \code{\link[=req_defaults]{req_defaults()}}.}
 
 \item{source}{A friendly label for the service, used in the user-facing
 message. For example \code{"gnomAD"}.}
+
+\item{secret_query}{A named list of query-string credentials. Appended here
+rather than by the caller, so \code{req} itself never carries them and neither
+does anything built from \code{req$url}. See \code{\link[=redact_secrets]{redact_secrets()}}.}
 }
 \value{
 An envelope whose \code{data} is a single string on success.

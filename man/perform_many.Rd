@@ -4,7 +4,13 @@
 \alias{perform_many}
 \title{Perform many requests as one batch}
 \usage{
-perform_many(reqs, source = "API", max_active = 6, progress = FALSE)
+perform_many(
+  reqs,
+  source = "API",
+  max_active = 6,
+  progress = FALSE,
+  secret_query = NULL
+)
 }
 \arguments{
 \item{reqs}{A list of httr2 requests, each prepared with \code{\link[=req_defaults]{req_defaults()}}.}
@@ -16,6 +22,9 @@ message. For example \code{"MyGene"}.}
 
 \item{progress}{Passed to \code{httr2::req_perform_parallel()}. \code{FALSE} by
 default, because the usual caller is a Shiny app that renders its own.}
+
+\item{secret_query}{A named list of query-string credentials, applied to
+every request in the batch at dispatch. See \code{\link[=redact_secrets]{redact_secrets()}}.}
 }
 \value{
 A list of envelopes, the same length and order as \code{reqs}. See
