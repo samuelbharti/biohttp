@@ -67,8 +67,8 @@ Day-one consumers:
 `Imports` is `httr2`, `cachem`, `curl`, `jsonlite`, and `rlang`, and that is a
 hard constraint. Every downstream package and app inherits this list, so
 anything added here is added everywhere. A dependency that looks harmless in a
-transport layer becomes a transitive dependency of six Shiny apps and a Docker
-image.
+transport layer becomes a transitive dependency of every application that
+installs it, and of every container image those are built into.
 
 `jsonlite` is on the list for a reason worth knowing about. httr2 carries it in
 Suggests, not Imports, and `httr2::resp_body_json()` calls
