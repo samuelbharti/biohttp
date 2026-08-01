@@ -1,4 +1,4 @@
-# biohttp
+# biohttp <img src="man/figures/logo.png" align="right" height="139" alt="" />
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/samuelbharti/biohttp/actions/workflows/r.yml/badge.svg)](https://github.com/samuelbharti/biohttp/actions/workflows/r.yml)
@@ -118,11 +118,28 @@ setdiff(sort(unique(unlist(deps))), base)
 
 ## Installation
 
-Not published yet. Once it is on r-universe:
+From r-universe, which serves prebuilt binaries so there is nothing to compile:
 
 ```r
 install.packages("biohttp", repos = "https://samuelbharti.r-universe.dev")
 ```
+
+Or straight from GitHub, if you want a specific commit or a branch that has not
+been released yet:
+
+```r
+# pak resolves dependencies properly and is the one to reach for
+pak::pak("samuelbharti/biohttp")
+
+# a tagged release rather than the tip of main
+pak::pak("samuelbharti/biohttp@v0.1.0")
+
+# or, without pak
+remotes::install_github("samuelbharti/biohttp")
+```
+
+GitHub installs are built from source, so they need the usual R build tools.
+Prefer r-universe unless you specifically need an unreleased commit.
 
 ## Roadmap
 
