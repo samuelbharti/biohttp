@@ -17,10 +17,30 @@ check that the change fits inside these lines:
 
 ## Dependencies
 
-`Imports` is `httr2`, `cachem`, and `rlang`. That is a hard constraint, not a
-preference. Every downstream package and app inherits this list, so anything
-added here is added everywhere. Adding a dependency is a discussion on an issue
-first, not a commit.
+`Imports` is `httr2`, `cachem`, `jsonlite`, and `rlang`. That is a hard
+constraint, not a preference. Every downstream package and app inherits this
+list, so anything added here is added everywhere. A test asserts the list, so
+adding one fails the suite on purpose. Adding a dependency is a discussion on an
+issue first, not a commit.
+
+`jsonlite` is there because httr2 keeps it in Suggests and
+`httr2::resp_body_json()` checks for it at runtime, so without it `get_json()`
+fails on a clean install.
+
+## No compiled code
+
+The package is pure R and stays that way. There is no `src/`, no C, no C++, and
+no Rust.
+
+This was measured, not assumed. Against the live MyGene API a call spends about
+210 ms on the network and 0.2 ms parsing the response. Even on a 455 KB payload,
+parsing is roughly 6% of a call. `biohttp` is I/O bound by construction, so a
+faster native parser optimizes the wrong end of the problem, and native code
+would put a toolchain requirement into every consumer's Docker build.
+
+If a JSON bottleneck ever does appear, `yyjsonr` and `RcppSimdJson` already give
+roughly 10x over jsonlite in C and C++ that every build environment handles
+today. Reach for one of those before proposing a compiled language here.
 
 ## Branches and commits
 

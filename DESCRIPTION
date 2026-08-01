@@ -23,6 +23,7 @@ Depends:
 Imports:
     cachem,
     httr2,
+    jsonlite,
     rlang
 Suggests:
     testthat (>= 3.0.0),

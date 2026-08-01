@@ -55,33 +55,51 @@ Day-one consumers:
 
 ## Dependencies
 
-`Imports` is `httr2`, `cachem`, and `rlang`, and that is a hard constraint. Every
-downstream package and app inherits this list, so anything added here is added
-everywhere. A dependency that looks harmless in a transport layer becomes a
-transitive dependency of six Shiny apps and a Docker image.
+`Imports` is `httr2`, `cachem`, `jsonlite`, and `rlang`, and that is a hard
+constraint. Every downstream package and app inherits this list, so anything
+added here is added everywhere. A dependency that looks harmless in a transport
+layer becomes a transitive dependency of six Shiny apps and a Docker image.
 
-Resolved against CRAN on 2026-07-31, with `httr2` 1.3.0, `cachem` 1.1.0, and
-`rlang` 1.3.0:
+`jsonlite` is on the list for a reason worth knowing about. httr2 carries it in
+Suggests, not Imports, and `httr2::resp_body_json()` calls
+`check_installed("jsonlite")` at runtime. Without it declared here, biohttp
+installs cleanly and then fails on the first `get_json()` call, which is the
+package's main entry point. It costs nothing in practice: `shiny` imports
+`jsonlite` directly, so every consumer app already has it.
+
+Resolved against CRAN on 2026-07-31, with `httr2` 1.3.0, `cachem` 1.1.0,
+`jsonlite` 2.0.0, and `rlang` 1.3.0:
 
 | Declared | Brings in directly |
 | --- | --- |
 | `httr2` | `cli`, `curl`, `glue`, `lifecycle`, `magrittr`, `openssl`, `R6`, `rlang`, `vctrs`, `withr` |
 | `cachem` | `fastmap`, `rlang` |
+| `jsonlite` | nothing outside base R |
 | `rlang` | nothing outside base R |
 
-The full recursive set is 13 non-base packages: `askpass`, `cli`, `curl`,
-`fastmap`, `glue`, `lifecycle`, `magrittr`, `openssl`, `R6`, `rlang`, `sys`,
-`vctrs`, `withr`. `askpass` and `sys` arrive under `openssl`.
+The full recursive set is 14 non-base packages: `askpass`, `cli`, `curl`,
+`fastmap`, `glue`, `jsonlite`, `lifecycle`, `magrittr`, `openssl`, `R6`,
+`rlang`, `sys`, `vctrs`, `withr`. `askpass` and `sys` arrive under `openssl`.
+
+### No compiled code
+
+The package is pure R. There is no `src/`, and there will not be. That was
+evaluated rather than assumed: measured against the live MyGene API, a call
+spends about 210 ms on the network and 0.2 ms parsing the response, so parsing
+is roughly one tenth of one percent of the work. A faster native parser, in any
+language, would be optimizing the wrong end of a call that is waiting on
+somebody else's server.
 
 Regenerate this list with:
 
 ```r
 deps <- tools::package_dependencies(
-  c("httr2", "cachem", "rlang"),
+  c("httr2", "cachem", "jsonlite", "rlang"),
   which = c("Depends", "Imports", "LinkingTo"),
   recursive = TRUE
 )
-setdiff(sort(unique(unlist(deps))), rownames(installed.packages(priority = "base")))
+base <- rownames(installed.packages(priority = "base"))
+setdiff(sort(unique(unlist(deps))), base)
 ```
 
 ## Installation
