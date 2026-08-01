@@ -1,12 +1,11 @@
 name: R-CMD-check
 
-# Only a pull request into main runs this. Work on a feature branch and into
-# dev is verified locally instead: `prek run --all-files` and
-# `rcmdcheck::rcmdcheck(args = c("--no-manual", "--as-cran"))`. See
-# CONTRIBUTING.md. workflow_dispatch stays so a run can be asked for by hand.
+# Every pull request runs this, into dev as well as main. Pushes do not: a
+# branch is checked when it is proposed, and the same commits do not need
+# checking twice. See CONTRIBUTING.md.
 on:
   pull_request:
-    branches: [main]
+    branches: [main, dev]
   workflow_dispatch:
 
 permissions:
