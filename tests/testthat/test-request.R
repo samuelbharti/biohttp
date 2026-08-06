@@ -23,6 +23,26 @@ test_that("the user agent reads the environment when nothing is passed", {
   expect_match(ua, "mailto:env@example.org", fixed = TRUE)
 })
 
+test_that("a blank identity in the environment still names the package", {
+  # BIOHTTP_CALLER_IDENTITY exported with no value used to be taken literally,
+  # so the header went out as "/0.1.2": a version with nothing in front of it,
+  # which is the one thing a user agent exists to carry. Sys.getenv()'s default
+  # argument only fires when the name is absent, and an empty export is how a
+  # container passes through a variable the operator never filled in.
+  #
+  # The whole suite runs with these three exported empty, from setup.R, so this
+  # went unnoticed in every other test in this file.
+  withr::local_envvar(
+    BIOHTTP_CALLER_IDENTITY = "",
+    BIOHTTP_CONTACT_EMAIL = "",
+    BIOHTTP_CONTACT_URL = ""
+  )
+
+  ua <- user_agent()
+  expect_match(ua, "^biohttp/")
+  expect_no_match(ua, "^/")
+})
+
 test_that("is_transient covers 429 and the standard 5xx, and nothing else", {
   for (code in c(429L, 500L, 502L, 503L, 504L)) {
     expect_true(is_transient(httr2::response(status_code = code)))

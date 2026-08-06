@@ -142,9 +142,21 @@ test_that("the disk tier defaults to the user cache directory", {
   # expects it to. R_user_dir() is per-user and absolute, so neither holds.
   withr::local_envvar(BIOHTTP_CACHE_DIR = NA)
 
+  # Pins the location, because which directory it is matters: R_user_dir() is
+  # the one CRAN sanctions for a cache that outlives a session.
   expect_identical(cache_dir(), tools::R_user_dir("biohttp", "cache"))
-  # Absolute on both a POSIX path and a Windows drive letter.
+
+  # And pins the property that made the old default wrong, which is the part a
+  # future change to the line above still has to satisfy. Absolute on a POSIX
+  # path and on a Windows drive letter. "data/cache" fails this; nothing else
+  # here does, because a relative path is indistinguishable from an absolute one
+  # until something resolves it against a working directory.
   expect_match(cache_dir(), "^(/|[A-Za-z]:)")
+
+  # Deliberately not writing to it. A test that exercised the real default would
+  # litter an actual user cache directory, which is the policy this default
+  # exists to respect. The disk tier's write path is covered against a tempdir
+  # in the tests below.
 })
 
 test_that("a blank BIOHTTP_CACHE_DIR falls back rather than meaning here", {

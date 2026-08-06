@@ -24,12 +24,24 @@ one that gets a suite green.
 
 ## Fixed
 
-* `BIOHTTP_CACHE_DIR` set to an empty string now falls back to the default
-  instead of being taken literally. `Sys.getenv()`'s own default only fires when
-  a name is absent, so a deployment exporting the name with no value got `""`,
-  and `""` as a directory is the working directory. `env_num()` and `env_flag()`
-  had always treated a blank setting as one nobody made; the directory now reads
-  the same way. Found writing the test for the default above.
+* Every environment variable the package reads now treats an empty export the
+  same way it treats an absent one. `Sys.getenv()`'s default argument only fires
+  when a name is absent, so a container passing through a variable its operator
+  never filled in got `""` rather than the default, and four readers were doing
+  that. `env_num()` and `env_flag()` had always had the rule; `env_chr()` gives
+  it to the rest.
+
+  The one that mattered was `BIOHTTP_CALLER_IDENTITY`. Exported empty, it sent
+  `User-Agent: biohttp/0.1.2` out as `/0.1.2`: a version with nothing in front
+  of it, which is the one thing a user agent exists to carry, on a package whose
+  point is being attributable to the service you are calling. Every test in the
+  suite ran that way, because `setup.R` clears those variables by exporting them
+  empty, and no test looked.
+
+  `BIOHTTP_CACHE_DIR` was the same defect with a smaller blast radius: `""` as a
+  directory is the working directory, which is what the change above removes.
+  `BIOHTTP_CONTACT_URL`, `BIOHTTP_CONTACT_EMAIL` and `BIOHTTP_CACHE_SALT` all
+  default to `""` anyway, so they read the same as before.
 * The `status_message()` example no longer calls `withr`, which is in
   `Suggests`. An example may only use what `Imports` guarantees: CRAN checks
   with `_R_CHECK_DEPENDS_ONLY_` set, where a `Suggests` package is simply absent

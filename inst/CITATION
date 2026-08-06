@@ -12,10 +12,7 @@ citHeader("If you use biohttp in your work, please cite it as below.")
 # the Zenodo record instead.
 bibentry(
   bibtype = "Manual",
-  title = paste(
-    "biohttp: Normalized HTTP Transport with Circuit Breaking",
-    "and Caching"
-  ),
+  title = "biohttp: Normalized HTTP Transport with Circuit Breaking and Caching",
   author = person(
     "Samuel",
     "Bharti",

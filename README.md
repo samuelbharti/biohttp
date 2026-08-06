@@ -8,11 +8,10 @@
 
 One HTTP transport layer for R clients of biological web services.
 
-> **Status:** released and stable; `NEWS.md` says which version is current, so
-> this line cannot go stale the way it did once already. Install from
-> [r-universe](https://samuelbharti.r-universe.dev/biohttp), read the docs at
-> <https://www.samuelbharti.com/biohttp/>. The envelope contract is fixed from
-> 0.1.0; changing it is a breaking change.
+> **Status:** released and stable, with the current version in `NEWS.md`.
+> Install from [r-universe](https://samuelbharti.r-universe.dev/biohttp), read
+> the docs at <https://www.samuelbharti.com/biohttp/>. The envelope contract is
+> fixed from 0.1.0; changing it is a breaking change.
 
 ## Why
 
@@ -118,7 +117,7 @@ Regenerate this list with:
 
 ```r
 deps <- tools::package_dependencies(
-  c("httr2", "cachem", "jsonlite", "rlang"),
+  c("httr2", "cachem", "curl", "jsonlite", "rlang", "tools"),
   which = c("Depends", "Imports", "LinkingTo"),
   recursive = TRUE
 )

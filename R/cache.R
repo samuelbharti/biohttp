@@ -11,7 +11,7 @@
 CACHE_SCHEMA <- "1"
 
 cache_salt <- function() {
-  Sys.getenv("BIOHTTP_CACHE_SALT", "")
+  env_chr("BIOHTTP_CACHE_SALT", "")
 }
 
 # tools::R_user_dir() is the location CRAN sanctions for a package that caches
