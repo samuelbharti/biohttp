@@ -4,8 +4,8 @@
 
 ## Checks run locally
 
-CI runs only on a pull request into `main`, so the local run is the check
-rather than a convenience. See `CONTRIBUTING.md`.
+CI runs on a pull request into `dev` or `main`, but it runs after the fact. The
+local run is what keeps a broken commit off the branch. See `CONTRIBUTING.md`.
 
 - [ ] `prek run --all-files`
 - [ ] `Rscript -e 'devtools::test()'`
