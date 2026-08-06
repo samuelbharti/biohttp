@@ -12,12 +12,21 @@
 # because that is the encoder httr2 builds query strings with. It is already a
 # hard Imports of httr2, so declaring it adds nothing to what a consumer
 # installs; it is named here because the package calls it directly.
-test_that("Imports stays at cachem, curl, httr2, jsonlite, and rlang", {
+#
+# tools is on the list for cache_dir(), which calls tools::R_user_dir() to place
+# the disk tier where CRAN sanctions a per-user cache. It is a base-priority
+# package shipped with every R installation, so declaring it adds nothing to
+# what a consumer installs; the same argument as curl, and it is named for the
+# same reason: R CMD check wants a declaration for anything reached with `::`.
+test_that("Imports stays at cachem, curl, httr2, jsonlite, rlang, and tools", {
   desc <- system.file("DESCRIPTION", package = "biohttp")
   imports <- read.dcf(desc, "Imports")[[1]]
   declared <- trimws(strsplit(imports, ",")[[1]])
 
-  expect_setequal(declared, c("cachem", "curl", "httr2", "jsonlite", "rlang"))
+  expect_setequal(
+    declared,
+    c("cachem", "curl", "httr2", "jsonlite", "rlang", "tools")
+  )
 })
 
 test_that("no Shiny dependency in any form", {

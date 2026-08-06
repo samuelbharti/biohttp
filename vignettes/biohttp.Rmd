@@ -261,7 +261,7 @@ start writing to somebody's disk because they installed it:
 | `BIOHTTP_CACHE_MAX_SIZE` | 256 MB | Memory tier ceiling, bytes |
 | `BIOHTTP_CACHE_MAX_N` | unlimited | Memory tier ceiling, number of entries |
 | `BIOHTTP_CACHE_DISK` | off | Set to `true` to add the disk tier |
-| `BIOHTTP_CACHE_DIR` | `data/cache` | Where the disk tier lives |
+| `BIOHTTP_CACHE_DIR` | `tools::R_user_dir("biohttp", "cache")` | Where the disk tier lives |
 | `BIOHTTP_CACHE_DISK_TTL` | 7 days | Disk tier max age, seconds |
 | `BIOHTTP_CACHE_SALT` | empty | Set per deployment |
 

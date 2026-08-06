@@ -17,11 +17,15 @@ check that the change fits inside these lines:
 
 ## Dependencies
 
-`Imports` is `httr2`, `cachem`, `curl`, `jsonlite`, and `rlang`. That is a hard
-constraint, not a preference. Every downstream package and app inherits this
-list, so anything added here is added everywhere. A test asserts the list, so
-adding one fails the suite on purpose. Adding a dependency is a discussion on an
-issue first, not a commit.
+`Imports` is `httr2`, `cachem`, `curl`, `jsonlite`, `rlang`, and `tools`. That
+is a hard constraint, not a preference. Every downstream package and app
+inherits this list, so anything added here is added everywhere. A test asserts
+the list, so adding one fails the suite on purpose. Adding a dependency is a
+discussion on an issue first, not a commit.
+
+The constraint is about what a consumer inherits, so a base package that ships
+with R is not what it guards against. `tools` below is declared on that reading.
+Anything outside base R is the conversation.
 
 `jsonlite` is there because httr2 keeps it in Suggests and
 `httr2::resp_body_json()` checks for it at runtime, so without it `get_json()`
@@ -30,6 +34,10 @@ fails on a clean install.
 `curl` is there because `redact_secrets()` calls `curl::curl_escape()` directly,
 matching the encoder httr2 builds query strings with. It is already a hard
 `Imports` of httr2, so it costs a consumer nothing.
+
+`tools` is there because `cache_dir()` calls `tools::R_user_dir()`. It ships
+with R itself, so it costs a consumer nothing either; it is declared because
+`R CMD check` requires a declaration for anything reached with `::`.
 
 ## No compiled code
 
