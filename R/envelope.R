@@ -28,6 +28,9 @@
 #'
 #' @format A character vector of length seven.
 #'
+#' @docType data
+#' @keywords datasets
+#'
 #' @export
 STATUS_LEVELS <- c(
   "ok",

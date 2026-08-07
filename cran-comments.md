@@ -5,6 +5,7 @@ This is a new submission.
 ## Test environments
 
 * macOS 26 (local), R 4.6.0
+* Windows 11 (local), R 4.6.1, manual built
 * Ubuntu latest (GitHub Actions), R devel, R release, R oldrel-1
 * Windows latest (GitHub Actions), R release
 * macOS latest (GitHub Actions), R release
@@ -37,10 +38,9 @@ That note is expected for a first submission.
   `BIOHTTP_CACHE_DIR`.
 * Examples that set an option restore it.
 * `tools` is declared in `Imports` for `tools::R_user_dir()`.
-* `STATUS_LEVELS` is an exported character vector, not a function. It is
-  documented with `\format` and `\details` rather than `\value`, which is the
-  convention for a data object. It is the only `.Rd` file with a `\usage`
-  section and no `\value`; every exported function has one.
+* Every exported function has a `\value` section. The one `.Rd` file without one
+  is `STATUS_LEVELS`, an exported character vector rather than a function, which
+  carries `\docType{data}` and `\format` instead.
 * "Nygard" in the description is an author surname, from the reference for the
   circuit breaker pattern.
 * The three `https://mygene.info/v3` strings in the vignette are API base paths
