@@ -21,6 +21,11 @@ credentials*
 secrets/
 .secrets/
 
+# Submission notes for CRAN. Kept on disk, out of the repository: the file is
+# working correspondence for one submission, not part of the package. It is in
+# .Rbuildignore too, so a local copy never reaches a tarball.
+cran-comments.md
+
 # R
 .Rproj.user/
 .Rhistory

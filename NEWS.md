@@ -56,8 +56,6 @@ one that gets a suite green.
   a tarball, so the README had been promising something only a source checkout
   could deliver. Both exist now, because GitHub's cite box reads the `.cff` and
   R reads `inst/CITATION`.
-* `cran-comments.md`, which `.Rbuildignore` had been reserving a line for since
-  the package was scaffolded, without the file ever existing.
 
 ## Documentation
 
