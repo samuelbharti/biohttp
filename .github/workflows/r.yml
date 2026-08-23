@@ -18,13 +18,20 @@ jobs:
     strategy:
       fail-fast: false
       # CRAN checks against r-devel, r-release, and r-oldrel, so the matrix
-      # covers all three. devel and oldrel run on ubuntu; the other platforms
-      # cover release, which is what most users are on.
+      # covers all three. oldrel runs on ubuntu; release runs everywhere,
+      # because it is what most users are on.
+      #
+      # devel runs on ubuntu and on windows. Windows plus r-devel is the pair
+      # CRAN's own incoming check runs, and r-lib's standard matrix leaves it
+      # out, so it was the one combination nothing here covered. Running it
+      # means a submission does not depend on remembering to send the tarball
+      # to win-builder by hand.
       matrix:
         config:
           - { os: ubuntu-latest, r: "devel", http-user-agent: "release" }
           - { os: ubuntu-latest, r: "release" }
           - { os: ubuntu-latest, r: "oldrel-1" }
+          - { os: windows-latest, r: "devel" }
           - { os: windows-latest, r: "release" }
           - { os: macos-latest, r: "release" }
     env:
