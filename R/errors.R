@@ -55,7 +55,7 @@ default_status_message <- function(source, status, http, condition) {
 #' @section Supplying your own wording:
 #' Set `biohttp.status_message` to a function of `source`, `status`, `http` and
 #' `condition`. It is called instead of the built-in, and it is the way to keep
-#' an app's own voice, or to localise, while adopting the transport:
+#' an app's own voice, or to localize, while adopting the transport:
 #'
 #' ```r
 #' options(biohttp.status_message = function(source, status, http, condition) {
@@ -87,12 +87,13 @@ default_status_message <- function(source, status, http, condition) {
 #' status_message("gnomAD", "no_data")
 #' status_message("gnomAD", "error", http = 503L)
 #'
-#' withr::with_options(
-#'   list(biohttp.status_message = function(source, status, http, condition) {
+#' old <- options(
+#'   biohttp.status_message = function(source, status, http, condition) {
 #'     paste0(source, " says: ", status)
-#'   }),
-#'   status_message("gnomAD", "timeout")
+#'   }
 #' )
+#' status_message("gnomAD", "timeout")
+#' options(old)
 #'
 #' @export
 status_message <- function(

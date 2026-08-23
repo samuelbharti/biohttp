@@ -8,10 +8,10 @@
 
 One HTTP transport layer for R clients of biological web services.
 
-> **Status:** 0.1.0, released. Install from
-> [r-universe](https://samuelbharti.r-universe.dev/biohttp), read the docs at
-> <https://www.samuelbharti.com/biohttp/>. The envelope contract is fixed from
-> here; changing it is a breaking change.
+> **Status:** released and stable, with the current version in `NEWS.md`.
+> Install from [r-universe](https://samuelbharti.r-universe.dev/biohttp), read
+> the docs at <https://www.samuelbharti.com/biohttp/>. The envelope contract is
+> fixed from 0.1.0; changing it is a breaking change.
 
 ## Why
 
@@ -66,10 +66,10 @@ is, and it never will.
 
 ## Dependencies
 
-`Imports` is `httr2`, `cachem`, `curl`, `jsonlite`, and `rlang`, and that is a
-hard constraint. Every downstream package and app inherits this list, so
-anything added here is added everywhere. A dependency that looks harmless in a
-transport layer becomes a transitive dependency of every application that
+`Imports` is `httr2`, `cachem`, `curl`, `jsonlite`, `rlang`, and `tools`, and
+that is a hard constraint. Every downstream package and app inherits this list,
+so anything added here is added everywhere. A dependency that looks harmless in
+a transport layer becomes a transitive dependency of every application that
 installs it, and of every container image those are built into.
 
 `jsonlite` is on the list for a reason worth knowing about. httr2 carries it in
@@ -83,6 +83,12 @@ package's main entry point. It costs nothing in practice: `shiny` imports
 directly, matching the encoder httr2 builds query strings with. It is already a
 hard `Imports` of httr2, so it adds nothing to what a consumer installs; it is
 named here because the package uses it rather than merely inheriting it.
+
+`tools` is declared because `cache_dir()` calls `tools::R_user_dir()` to place
+the disk cache. It ships with R itself, so it is absent from the table below and
+adds nothing to what a consumer installs; it is named for the same reason `curl`
+is, which is that `R CMD check` wants a declaration for anything reached with
+`::`.
 
 Resolved against CRAN on 2026-07-31, with `httr2` 1.3.0, `cachem` 1.1.0,
 `jsonlite` 2.0.0, and `rlang` 1.3.0:
@@ -111,7 +117,7 @@ Regenerate this list with:
 
 ```r
 deps <- tools::package_dependencies(
-  c("httr2", "cachem", "jsonlite", "rlang"),
+  c("httr2", "cachem", "curl", "jsonlite", "rlang", "tools"),
   which = c("Depends", "Imports", "LinkingTo"),
   recursive = TRUE
 )
@@ -135,7 +141,7 @@ been released yet:
 pak::pak("samuelbharti/biohttp")
 
 # a tagged release rather than the tip of main
-pak::pak("samuelbharti/biohttp@v0.1.0")
+pak::pak("samuelbharti/biohttp@v0.1.2")
 
 # or, without pak
 remotes::install_github("samuelbharti/biohttp")
@@ -153,7 +159,8 @@ Prefer r-universe unless you specifically need an unreleased commit.
 | 2. Apply the envelope contract, write the vignette | done |
 | 2b. Batched calls and query-string credentials | done |
 | 3. Publish to r-universe, tag 0.1.0, pkgdown site live | done |
-| 4. First production migration onto the package | not started |
+| 4. First production migration onto the package | done |
+| 5. CRAN submission | in progress |
 
 ## Using it
 
@@ -189,14 +196,18 @@ to the newest release:
 To pin the exact version you used, cite its own DOI instead. Version 0.1.0 is
 [10.5281/zenodo.21731865](https://doi.org/10.5281/zenodo.21731865).
 
-`CITATION.cff` carries the same metadata, so `citation("biohttp")` in R and the
-"Cite this repository" button on GitHub both work.
+The same metadata is written twice, because the two consumers read different
+files. `inst/CITATION` ships in the package, so `citation("biohttp")` works from
+an installed copy; `CITATION.cff` stays in the repository, so the "Cite this
+repository" button on GitHub works.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). The scope lines above are the first thing
-a pull request is checked against.
+See
+[CONTRIBUTING.md](https://github.com/samuelbharti/biohttp/blob/main/CONTRIBUTING.md).
+The scope lines above are the first thing a pull request is checked against.
 
 ## License
 
-MIT. See [LICENSE.md](LICENSE.md).
+MIT. See
+[LICENSE.md](https://github.com/samuelbharti/biohttp/blob/main/LICENSE.md).

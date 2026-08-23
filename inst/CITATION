@@ -1,0 +1,26 @@
+citHeader("If you use biohttp in your work, please cite it as below.")
+
+# The same metadata as CITATION.cff, which is the point: GitHub's cite box reads
+# the .cff and R reads this file, and a reader should not be able to tell which
+# one they got.
+#
+# The version is read from DESCRIPTION rather than written here, because it
+# already lives in three places and a fourth is a fourth chance to go stale.
+#
+# The DOI is the concept DOI, which always resolves to the newest release. A
+# reader pinning the version they used should take that release's own DOI from
+# the Zenodo record instead.
+bibentry(
+  bibtype = "Manual",
+  title = "biohttp: Normalized HTTP Transport with Circuit Breaking and Caching",
+  author = person(
+    "Samuel",
+    "Bharti",
+    email = "samuelbharti.io@gmail.com",
+    comment = c(ORCID = "0000-0003-4190-7058")
+  ),
+  year = "2026",
+  note = sprintf("R package version %s", meta$Version),
+  doi = "10.5281/zenodo.21731864",
+  url = "https://www.samuelbharti.com/biohttp/"
+)

@@ -11,11 +11,17 @@
 CACHE_SCHEMA <- "1"
 
 cache_salt <- function() {
-  Sys.getenv("BIOHTTP_CACHE_SALT", "")
+  env_chr("BIOHTTP_CACHE_SALT", "")
 }
 
+# tools::R_user_dir() is the location CRAN sanctions for a package that caches
+# across sessions, and it is per-user rather than per-directory. The old default
+# was relative, so it resolved against whatever directory R happened to start
+# in: a second working directory silently got a second cache, and a process
+# started somewhere unwritable found out at the first write rather than at
+# startup.
 cache_dir <- function() {
-  Sys.getenv("BIOHTTP_CACHE_DIR", file.path("data", "cache"))
+  env_chr("BIOHTTP_CACHE_DIR", tools::R_user_dir("biohttp", "cache"))
 }
 
 # The disk tier is opt-in and off by default. A library should not start writing

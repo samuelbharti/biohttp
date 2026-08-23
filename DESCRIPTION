@@ -1,6 +1,6 @@
 Package: biohttp
 Title: Normalized HTTP Transport with Circuit Breaking and Caching
-Version: 0.1.1
+Version: 0.1.2
 Authors@R:
     person("Samuel", "Bharti", , "samuelbharti.io@gmail.com",
            role = c("aut", "cre", "cph"),
@@ -12,13 +12,15 @@ Description: Web service calls return a normalized result value instead of
     breaking, retry with a transient-failure predicate, optional throttling,
     redacted request headers, and a success-only cache come as defaults. Many
     questions to one source can be asked as a single batch, where only the
-    entries the cache is missing reach the network. Service specific knowledge
-    is left to the client packages built on top.
+    entries the cache is missing reach the network. Service-specific knowledge
+    is left to the client packages built on top. The circuit breaker is the
+    pattern described in Nygard (2018, ISBN:9781680502398).
 License: MIT + file LICENSE
 URL: https://github.com/samuelbharti/biohttp,
     https://www.samuelbharti.com/biohttp/
 BugReports: https://github.com/samuelbharti/biohttp/issues
 Encoding: UTF-8
+Language: en-US
 Roxygen: list(markdown = TRUE)
 Depends:
     R (>= 4.0)
@@ -27,7 +29,8 @@ Imports:
     curl,
     httr2,
     jsonlite,
-    rlang
+    rlang,
+    tools
 Suggests:
     knitr,
     rmarkdown,
