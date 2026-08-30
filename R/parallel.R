@@ -324,6 +324,85 @@ get_json_many <- function(
   )
 }
 
+#' GET many text endpoints as one batch
+#'
+#' The batched counterpart to [get_text()], for a source that ships several
+#' flat files rather than one. Each body comes back verbatim as a string in
+#' `data`, so the envelope shape matches the single call and a caller does not
+#' branch on which wrapper it used.
+#'
+#' The keys are built exactly the way [get_text()] builds its own, so a batch
+#' reuses a file a single call already fetched and the other way around.
+#'
+#' Read the sections on [perform_many()] first. The same two rules apply: pass
+#' requests for one host, and supply a `throttle`.
+#'
+#' @inheritParams get_json_many
+#'
+#' @return A list of envelopes, the same length and order as `queries`, each
+#'   with a single string in `data` on success.
+#'
+#' @examples
+#' cache_reset()
+#' breaker_reset()
+#'
+#' httr2::with_mocked_responses(
+#'   function(req) {
+#'     httr2::response(
+#'       status_code = 200,
+#'       body = charToRaw("gene\tscore\n")
+#'     )
+#'   },
+#'   length(get_text_many(
+#'     "https://search.clinicalgenome.org",
+#'     path = c("kb/gene-validity/download", "kb/dosage/download"),
+#'     queries = list(list(), list()),
+#'     source = "ClinGen"
+#'   ))
+#' )
+#'
+#' @export
+get_text_many <- function(
+  base_url,
+  path = NULL,
+  queries = list(),
+  source = "API",
+  timeout = 30,
+  max_tries = 3,
+  headers = NULL,
+  throttle = NULL,
+  max_active = 6,
+  progress = FALSE,
+  secret_query = NULL
+) {
+  n <- length(queries)
+  paths <- recycle_arg(path, n, "path")
+  reqs <- lapply(seq_len(n), function(i) {
+    req <- build_get(base_url, paths[[i]], queries[[i]])
+    req_defaults(req, timeout, max_tries, headers, throttle)
+  })
+  keys <- vapply(
+    reqs,
+    function(req) {
+      cache_key(
+        source,
+        paste0("GET_TEXT ", req$url),
+        list(headers = headers)
+      )
+    },
+    character(1)
+  )
+  cached_many(
+    keys,
+    reqs,
+    source,
+    max_active,
+    progress,
+    read_text_body,
+    secret_query
+  )
+}
+
 #' POST many JSON bodies as one batch
 #'
 #' The batched counterpart to [post_json()], for a JSON or GraphQL endpoint

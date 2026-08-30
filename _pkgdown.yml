@@ -48,6 +48,7 @@ reference:
     contents:
       - get_json_many
       - post_json_many
+      - get_text_many
       - perform_many
 
   - title: Build and perform your own request
