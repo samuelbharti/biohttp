@@ -224,6 +224,8 @@ build_get <- function(base_url, path, query) {
 #'   that has no header form. Deliberately **not** part of the cache key, so it
 #'   suits a credential that raises a rate limit and not one that changes the
 #'   response. See [redact_secrets()].
+#' @param ttl Seconds a cached success stays fresh. `NULL`, the default, means
+#'   the configured lifetime from `BIOHTTP_CACHE_TTL`. See [cached()].
 #'
 #' @return An envelope. See [envelope()].
 #'
@@ -257,14 +259,15 @@ get_json <- function(
   max_tries = 3,
   headers = NULL,
   throttle = NULL,
-  secret_query = NULL
+  secret_query = NULL,
+  ttl = NULL
 ) {
   req <- build_get(base_url, path, query)
   req <- req_defaults(req, timeout, max_tries, headers, throttle)
   # req$url holds no secret, so neither does the key. That is the point: a
   # rate-limit credential must not partition the cache. See R/secrets.R.
   key <- cache_key(source, paste0("GET ", req$url), list(headers = headers))
-  cached(key, function() perform(req, source, secret_query))
+  cached(key, function() perform(req, source, secret_query), ttl)
 }
 
 #' POST a JSON body
@@ -304,7 +307,8 @@ post_json <- function(
   max_tries = 3,
   headers = NULL,
   throttle = NULL,
-  secret_query = NULL
+  secret_query = NULL,
+  ttl = NULL
 ) {
   req <- httr2::req_body_json(httr2::request(url), body)
   req <- req_defaults(req, timeout, max_tries, headers, throttle)
@@ -313,7 +317,7 @@ post_json <- function(
     paste0("POST ", url),
     list(body = body, headers = headers)
   )
-  cached(key, function() perform(req, source, secret_query))
+  cached(key, function() perform(req, source, secret_query), ttl)
 }
 
 #' GET a text endpoint
@@ -323,7 +327,9 @@ post_json <- function(
 #' [get_json()]; the body comes back verbatim as a string in `data`.
 #'
 #' The success-only cache means the file is fetched once per URL and every later
-#' lookup against it is served in process.
+#' lookup against it is served in process. A bulk table is usually worth keeping
+#' longer than a per-record answer, so pass a `ttl` when the configured default
+#' is too short for it.
 #'
 #' @inheritParams get_json
 #'
@@ -355,7 +361,8 @@ get_text <- function(
   max_tries = 3,
   headers = NULL,
   throttle = NULL,
-  secret_query = NULL
+  secret_query = NULL,
+  ttl = NULL
 ) {
   req <- build_get(base_url, path, query)
   req <- req_defaults(req, timeout, max_tries, headers, throttle)
@@ -364,5 +371,5 @@ get_text <- function(
     paste0("GET_TEXT ", req$url),
     list(headers = headers)
   )
-  cached(key, function() perform_text(req, source, secret_query))
+  cached(key, function() perform_text(req, source, secret_query), ttl)
 }

@@ -14,7 +14,8 @@ post_json_many(
   throttle = NULL,
   max_active = 6,
   progress = FALSE,
-  secret_query = NULL
+  secret_query = NULL,
+  ttl = NULL
 )
 }
 \arguments{
@@ -42,6 +43,10 @@ default, because the usual caller is a Shiny app that renders its own.}
 
 \item{secret_query}{A named list of query-string credentials, applied to
 every request in the batch at dispatch. See \code{\link[=redact_secrets]{redact_secrets()}}.}
+
+\item{ttl}{Seconds a cached success stays fresh, applied to every entry in
+the batch. \code{NULL}, the default, means the configured lifetime from
+\code{BIOHTTP_CACHE_TTL}. See \code{\link[=cached]{cached()}}.}
 }
 \value{
 A list of envelopes, the same length and order as \code{bodies}.

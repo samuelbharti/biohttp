@@ -204,8 +204,10 @@ cached_many <- function(
   max_active,
   progress,
   read_body,
-  secret_query = NULL
+  secret_query = NULL,
+  ttl = NULL
 ) {
+  ttl <- check_ttl(ttl)
   hits <- lapply(keys, cache_get)
   miss <- which(vapply(hits, is.null, logical(1)))
   if (length(miss) == 0) {
@@ -237,7 +239,7 @@ cached_many <- function(
   for (j in seq_along(send)) {
     # Same rule as cached(): only a success is ever stored.
     if (isTRUE(fetched[[j]]$ok)) {
-      cache()$set(keys[[send[j]]], fetched[[j]])
+      cache_set(keys[[send[j]]], fetched[[j]], ttl)
     }
   }
   hits
@@ -263,6 +265,9 @@ cached_many <- function(
 #'   not honor this under parallel performance.
 #' @param headers A named list of headers, all marked sensitive.
 #' @param throttle A throttle spec. See [req_defaults()].
+#' @param ttl Seconds a cached success stays fresh, applied to every entry in
+#'   the batch. `NULL`, the default, means the configured lifetime from
+#'   `BIOHTTP_CACHE_TTL`. See [cached()].
 #'
 #' @return A list of envelopes, the same length and order as `queries`.
 #'
@@ -298,7 +303,8 @@ get_json_many <- function(
   throttle = NULL,
   max_active = 6,
   progress = FALSE,
-  secret_query = NULL
+  secret_query = NULL,
+  ttl = NULL
 ) {
   n <- length(queries)
   paths <- recycle_arg(path, n, "path")
@@ -320,7 +326,8 @@ get_json_many <- function(
     max_active,
     progress,
     read_json_body,
-    secret_query
+    secret_query,
+    ttl
   )
 }
 
@@ -373,7 +380,8 @@ get_text_many <- function(
   throttle = NULL,
   max_active = 6,
   progress = FALSE,
-  secret_query = NULL
+  secret_query = NULL,
+  ttl = NULL
 ) {
   n <- length(queries)
   paths <- recycle_arg(path, n, "path")
@@ -399,7 +407,8 @@ get_text_many <- function(
     max_active,
     progress,
     read_text_body,
-    secret_query
+    secret_query,
+    ttl
   )
 }
 
@@ -448,7 +457,8 @@ post_json_many <- function(
   throttle = NULL,
   max_active = 6,
   progress = FALSE,
-  secret_query = NULL
+  secret_query = NULL,
+  ttl = NULL
 ) {
   reqs <- lapply(bodies, function(body) {
     req <- httr2::req_body_json(httr2::request(url), body)
@@ -472,6 +482,7 @@ post_json_many <- function(
     max_active,
     progress,
     read_json_body,
-    secret_query
+    secret_query,
+    ttl
   )
 }

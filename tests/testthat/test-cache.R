@@ -40,6 +40,164 @@ test_that("cached returns a stored success without refetching", {
   expect_identical(second$data$n, 1L)
 })
 
+# --- Per-call lifetime -------------------------------------------------------
+# The clock is mocked rather than slept through, so the suite stays fast and
+# the assertions are exact.
+
+test_that("a long ttl outlives a short configured default", {
+  # The case this exists for: a bulk table that took a minute to download should
+  # not expire on the same clock as a one-record lookup. cachem's max_age is one
+  # number for the whole memory tier, which is why expiry is carried per entry.
+  withr::local_envvar(BIOHTTP_CACHE_TTL = "10")
+  cache_reset()
+  now <- 1000
+  testthat::local_mocked_bindings(cache_now = function() now)
+  key <- cache_key("s", "big-table")
+  calls <- 0L
+  fetch <- function() {
+    calls <<- calls + 1L
+    status_ok(data = "a\tb\n", source = "s")
+  }
+
+  cached(key, fetch, ttl = 86400)
+  # Well past the configured 10 s, still inside the 86400 s asked for.
+  now <- now + 3600
+  cached(key, fetch, ttl = 86400)
+
+  expect_identical(calls, 1L)
+  cache_reset()
+})
+
+test_that("a short ttl expires and the next call fetches again", {
+  withr::local_envvar(BIOHTTP_CACHE_TTL = "1800")
+  cache_reset()
+  now <- 1000
+  testthat::local_mocked_bindings(cache_now = function() now)
+  key <- cache_key("s", "short-lived")
+  calls <- 0L
+  fetch <- function() {
+    calls <<- calls + 1L
+    status_ok(data = list(n = calls), source = "s")
+  }
+
+  cached(key, fetch, ttl = 5)
+  now <- now + 4
+  expect_identical(cached(key, fetch, ttl = 5)$data$n, 1L)
+  expect_identical(calls, 1L)
+
+  now <- now + 2
+  expect_identical(cached(key, fetch, ttl = 5)$data$n, 2L)
+  expect_identical(calls, 2L)
+  # An expired entry is dropped, not just skipped, so it stops taking up room.
+  cache_reset()
+})
+
+test_that("the configured default applies when no ttl is passed", {
+  withr::local_envvar(BIOHTTP_CACHE_TTL = "10")
+  cache_reset()
+  now <- 1000
+  testthat::local_mocked_bindings(cache_now = function() now)
+  key <- cache_key("s", "default-lifetime")
+  calls <- 0L
+  fetch <- function() {
+    calls <<- calls + 1L
+    status_ok(data = list(n = calls), source = "s")
+  }
+
+  cached(key, fetch)
+  now <- now + 9
+  cached(key, fetch)
+  expect_identical(calls, 1L)
+
+  now <- now + 2
+  cached(key, fetch)
+  expect_identical(calls, 2L)
+  cache_reset()
+})
+
+test_that("an expired entry is removed from the store on read", {
+  cache_reset()
+  now <- 1000
+  testthat::local_mocked_bindings(cache_now = function() now)
+  key <- cache_key("s", "gone")
+  cached(key, function() status_ok(data = 1, source = "s"), ttl = 5)
+  expect_true(cache()$exists(key))
+
+  now <- now + 10
+  expect_null(cache_get(key))
+  expect_false(cache()$exists(key))
+  cache_reset()
+})
+
+test_that("ttl is validated on every entry point", {
+  cache_reset()
+  fetch <- function() status_ok(data = 1, source = "s")
+  expect_error(cached(cache_key("s", "v"), fetch, ttl = 0), "positive")
+  expect_error(cached(cache_key("s", "v"), fetch, ttl = -1), "positive")
+  expect_error(cached(cache_key("s", "v"), fetch, ttl = "1h"), "positive")
+  expect_error(cached(cache_key("s", "v"), fetch, ttl = c(1, 2)), "positive")
+  expect_error(
+    get_json("https://mock.test", path = "x", source = "s", ttl = 0),
+    "positive"
+  )
+  expect_error(
+    get_text("https://mock.test", path = "x", source = "s", ttl = 0),
+    "positive"
+  )
+  expect_error(
+    post_json("https://mock.test/x", body = list(), source = "s", ttl = 0),
+    "positive"
+  )
+  expect_error(
+    get_json_many(
+      "https://mock.test",
+      "x",
+      list(list(q = "A")),
+      source = "s",
+      ttl = 0
+    ),
+    "positive"
+  )
+})
+
+test_that("a ttl on the batched path is honored too", {
+  breaker_reset()
+  withr::local_envvar(BIOHTTP_CACHE_TTL = "10")
+  cache_reset()
+  now <- 1000
+  testthat::local_mocked_bindings(cache_now = function() now)
+  calls <- 0L
+  httr2::local_mocked_responses(function(req) {
+    calls <<- calls + 1L
+    httr2::response(status_code = 200, body = charToRaw("a\tb\n"))
+  })
+  paths <- c("a.tsv", "b.tsv")
+  queries <- list(list(), list())
+
+  get_text_many("https://mock.test", paths, queries, source = "S", ttl = 3600)
+  expect_identical(calls, 2L)
+
+  now <- now + 600
+  get_text_many("https://mock.test", paths, queries, source = "S", ttl = 3600)
+  expect_identical(calls, 2L)
+
+  # The single call sees the same entries, on the same clock.
+  get_text("https://mock.test", path = "a.tsv", source = "S")
+  expect_identical(calls, 2L)
+  cache_reset()
+})
+
+test_that("a value set without an expiry is served as it is", {
+  # A caller who writes through cache() directly gets no expiry, and that must
+  # not become an error or a silent miss on the way back out.
+  cache_reset()
+  key <- cache_key("s", "raw")
+  env <- status_ok(data = 1, source = "s")
+  cache()$set(key, env)
+  expect_identical(cache_get(key), env)
+  cache_reset()
+})
+
 test_that("cached never stores a failure", {
   # The rule this guards: a cache that stores an error fallback poisons itself
   # for the life of the process, and every later lookup then serves the stored
