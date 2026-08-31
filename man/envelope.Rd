@@ -10,7 +10,8 @@ envelope(
   source = "API",
   http = NA_integer_,
   error = NULL,
-  detail = NULL
+  detail = NULL,
+  retry_after = NA_real_
 )
 }
 \arguments{
@@ -27,10 +28,15 @@ message. For example \code{"gnomAD"}.}
 detail.}
 
 \item{detail}{The technical cause, for a log. Never shown to a user.}
+
+\item{retry_after}{Seconds a \code{Retry-After} header asked the caller to
+wait, or \code{NA_real_} when the response carried none. Diagnostic: nothing
+in this package reads it back except the batched retry path in
+\code{parallel.R}, which shares this same field.}
 }
 \value{
 A list with \code{ok}, \code{status}, \code{http}, \code{data}, \code{source}, \code{error},
-\code{detail}, and \code{ts}.
+\code{detail}, \code{retry_after}, and \code{ts}.
 }
 \description{
 The single return shape for the whole package. \code{ok} is derived from \code{status}

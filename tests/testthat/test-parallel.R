@@ -197,7 +197,9 @@ test_that("a repeated query in one batch is a single request", {
 
 test_that("a repeated failing query is not cached by the dedupe path", {
   # Fanning one result out to several positions must not become a back door
-  # around the success-only rule.
+  # around the success-only rule. max_tries = 1 isolates dedupe from the
+  # retry pass (see test-parallel-retry.R), which would otherwise also
+  # multiply this URL's call count.
   breaker_reset()
   cache_reset()
   calls <- 0L
@@ -210,12 +212,19 @@ test_that("a repeated failing query is not cached by the dedupe path", {
     "https://mock.test",
     "query",
     list(list(q = "A"), list(q = "A")),
-    source = "S"
+    source = "S",
+    max_tries = 1
   )
   expect_identical(calls, 1L)
 
   # Nothing was stored, so asking again goes back out.
-  get_json_many("https://mock.test", "query", list(list(q = "A")), source = "S")
+  get_json_many(
+    "https://mock.test",
+    "query",
+    list(list(q = "A")),
+    source = "S",
+    max_tries = 1
+  )
   expect_identical(calls, 2L)
 })
 
@@ -266,7 +275,9 @@ test_that("a batch and a single call share cache entries both ways", {
 test_that("a failed entry in a batch is never cached", {
   # The single most important cache rule in the package, asserted for the
   # batched path too. A stored failure poisons itself for the life of the
-  # process.
+  # process. max_tries = 1 isolates the cache rule from the retry pass (see
+  # test-parallel-retry.R), which would otherwise also re-dispatch BAD
+  # within a single get_json_many() call.
   breaker_reset()
   cache_reset()
   calls <- 0L
@@ -279,11 +290,23 @@ test_that("a failed entry in a batch is never cached", {
   })
   queries <- list(list(q = "GOOD"), list(q = "BAD"))
 
-  get_json_many("https://mock.test", "query", queries, source = "S")
+  get_json_many(
+    "https://mock.test",
+    "query",
+    queries,
+    source = "S",
+    max_tries = 1
+  )
   expect_identical(calls, 2L)
 
   # The good one is warm, the failed one is retried.
-  get_json_many("https://mock.test", "query", queries, source = "S")
+  get_json_many(
+    "https://mock.test",
+    "query",
+    queries,
+    source = "S",
+    max_tries = 1
+  )
   expect_identical(calls, 3L)
 })
 

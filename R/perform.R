@@ -134,7 +134,11 @@ classify_result <- function(
       source = source,
       http = http,
       error = http_error_message(source, http = http),
-      detail = paste0(source, " returned HTTP ", http)
+      detail = paste0(source, " returned HTTP ", http),
+      # NA when the response carried no Retry-After. Read unconditionally
+      # here, not only for 429, because a 503 can carry one too and the
+      # batched retry path in parallel.R treats both as retryable.
+      retry_after = httr2::resp_retry_after(resp)
     ))
   }
   body <- tryCatch(read_body(resp), error = function(e) e)
