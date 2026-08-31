@@ -32,8 +32,10 @@ message. For example \code{"MyGene"}.}
 
 \item{timeout}{Seconds before a request is abandoned.}
 
-\item{max_tries}{Total attempts, including the first. Note that httr2 does
-not honor this under parallel performance.}
+\item{max_tries}{Total attempts, including the first. A retry pass
+re-sends only the entries that came back \code{rate_limited}, \code{timeout}, or
+a 5xx, honoring \code{Retry-After} between passes. See the retry section on
+\code{\link[=perform_many]{perform_many()}}.}
 
 \item{headers}{A named list of headers, all marked sensitive.}
 
