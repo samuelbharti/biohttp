@@ -22,6 +22,12 @@ home:
   description: >
     One HTTP transport layer for R clients of biological web services.
 
+# The home page sidebar lists the advisors and the funders next to the author.
+# The footer keeps the pkgdown default.
+authors:
+  sidebar:
+    roles: [aut, cre, ths, fnd]
+
 navbar:
   structure:
     left: [intro, reference, news]
