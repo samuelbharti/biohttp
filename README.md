@@ -201,6 +201,13 @@ files. `inst/CITATION` ships in the package, so `citation("biohttp")` works from
 an installed copy; `CITATION.cff` stays in the repository, so the "Cite this
 repository" button on GitHub works.
 
+## Acknowledgements
+
+Barret Schloerke and Carson Sievert advise this work as thesis advisors.
+Posit Software, PBC funds it and holds copyright together with the author. An
+additional gift from Anthropic supported the early stages and the planning of
+this work.
+
 ## Contributing
 
 See
