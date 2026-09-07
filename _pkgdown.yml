@@ -96,6 +96,16 @@ reference:
       - breaker_record
       - breaker_reset
 
+  - title: Rate limiting
+    desc: >
+      Pauses, one per host. If a source sends `Retry-After`, we use it. When a
+      host says you are asking too often, the batched path waits before it
+      tries again instead of going straight back in.
+    contents:
+      - ratelimit_record
+      - ratelimit_wait
+      - ratelimit_reset
+
   - title: Cache
     desc: Success-only, memory by default, opt-in disk tier.
     contents:
@@ -103,6 +113,14 @@ reference:
       - cache_key
       - cached
       - cache_reset
+
+  - title: What the transport did
+    desc: >
+      Counts per host. Use these if you want to know how much of a batch was a
+      second try, and how often a source pushed back.
+    contents:
+      - transport_stats
+      - transport_stats_reset
 
   - title: Utilities
     contents:
