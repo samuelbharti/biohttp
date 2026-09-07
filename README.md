@@ -1,6 +1,7 @@
 # biohttp <img src="man/figures/logo.png" align="right" height="139" alt="" />
 
 <!-- badges: start -->
+[![CRAN status](https://www.r-pkg.org/badges/version/biohttp)](https://CRAN.R-project.org/package=biohttp)
 [![R-CMD-check](https://github.com/samuelbharti/biohttp/actions/workflows/r.yml/badge.svg)](https://github.com/samuelbharti/biohttp/actions/workflows/r.yml)
 [![r-universe](https://samuelbharti.r-universe.dev/badges/biohttp)](https://samuelbharti.r-universe.dev/biohttp)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21731864.svg)](https://doi.org/10.5281/zenodo.21731864)
@@ -8,10 +9,10 @@
 
 One HTTP transport layer for R clients of biological web services.
 
-> **Status:** released and stable, with the current version in `NEWS.md`.
-> Install from [r-universe](https://samuelbharti.r-universe.dev/biohttp), read
-> the docs at <https://www.samuelbharti.com/biohttp/>. The envelope contract is
-> fixed from 0.1.0; changing it is a breaking change.
+> **Status:** on CRAN since 0.1.2. Docs at
+> <https://www.samuelbharti.com/biohttp/>, and the current version is in
+> `NEWS.md`. Every call returns the same shape, and that shape has not changed
+> since 0.1.0. Changing it would be a breaking change.
 
 ## Why
 
@@ -127,7 +128,12 @@ setdiff(sort(unique(unlist(deps))), base)
 
 ## Installation
 
-From r-universe, which serves prebuilt binaries so there is nothing to compile:
+```r
+install.packages("biohttp")
+```
+
+Or from r-universe, which often has a newer build than CRAN and ships prebuilt
+binaries:
 
 ```r
 install.packages("biohttp", repos = "https://samuelbharti.r-universe.dev")
@@ -140,15 +146,16 @@ been released yet:
 # pak resolves dependencies properly and is the one to reach for
 pak::pak("samuelbharti/biohttp")
 
-# a tagged release rather than the tip of main
-pak::pak("samuelbharti/biohttp@v0.1.2")
+# a tagged release rather than the tip of main. The tags are listed at
+# https://github.com/samuelbharti/biohttp/releases
+pak::pak("samuelbharti/biohttp@v0.1.1")
 
 # or, without pak
 remotes::install_github("samuelbharti/biohttp")
 ```
 
 GitHub installs are built from source, so they need the usual R build tools.
-Prefer r-universe unless you specifically need an unreleased commit.
+Use CRAN unless you need something that has not been released yet.
 
 ## Roadmap
 
@@ -156,11 +163,11 @@ Prefer r-universe unless you specifically need an unreleased commit.
 | --- | --- |
 | 0. Scaffold | done |
 | 1. The transport, ported from a working implementation | done |
-| 2. Apply the envelope contract, write the vignette | done |
+| 2. One return shape for every call, write the vignette | done |
 | 2b. Batched calls and query-string credentials | done |
 | 3. Publish to r-universe, tag 0.1.0, pkgdown site live | done |
 | 4. First production migration onto the package | done |
-| 5. CRAN submission | in progress |
+| 5. CRAN submission | done, 0.1.2 accepted 2026-09-03 |
 
 ## Using it
 

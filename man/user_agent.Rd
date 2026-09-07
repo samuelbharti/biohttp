@@ -2,7 +2,7 @@
 % Please edit documentation in R/request.R
 \name{user_agent}
 \alias{user_agent}
-\title{Build an attributable User-Agent string}
+\title{Build a User-Agent that identifies your caller}
 \usage{
 user_agent(
   identity = env_chr("BIOHTTP_CALLER_IDENTITY", "biohttp"),

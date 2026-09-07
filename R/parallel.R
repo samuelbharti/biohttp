@@ -323,8 +323,8 @@ cached_many <- function(
 #' `queries`, serves whatever the cache already holds, performs only the rest,
 #' and caches the successes.
 #'
-#' Read the sections on [perform_many()] first. The same two rules apply: pass
-#' requests for one host, and supply a `throttle`.
+#' Send requests for one host, and pass a `throttle`. [perform_many()] explains
+#' both.
 #'
 #' @param base_url The service's base URL.
 #' @param path A path appended to `base_url`. Length 1 to use the same path for
@@ -416,8 +416,8 @@ get_json_many <- function(
 #' The keys are built exactly the way [get_text()] builds its own, so a batch
 #' reuses a file a single call already fetched and the other way around.
 #'
-#' Read the sections on [perform_many()] first. The same two rules apply: pass
-#' requests for one host, and supply a `throttle`.
+#' Send requests for one host, and pass a `throttle`. [perform_many()] explains
+#' both.
 #'
 #' @inheritParams get_json_many
 #'
@@ -494,7 +494,8 @@ get_text_many <- function(
 #' answering many queries. Keyed on the URL and the body together, so two
 #' different queries to the same endpoint do not collide.
 #'
-#' Read the sections on [perform_many()] first.
+#' Send requests for one host, and pass a `throttle`. [perform_many()] explains
+#' both.
 #'
 #' @param url The endpoint URL.
 #' @param bodies A list of request bodies, one per request. Each is serialized

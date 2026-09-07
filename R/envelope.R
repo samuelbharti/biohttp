@@ -235,7 +235,7 @@ body_or_null <- function(res) {
   if (isTRUE(res$status %in% c("ok", "stale"))) res$data else NULL
 }
 
-#' Classify an HTTP status code onto the status enum
+#' Turn an HTTP status code into a status
 #'
 #' Only the codes the transport treats as an outcome in themselves are
 #' classified. A 2xx is the caller's to interpret, since a 200 carrying an empty
@@ -271,7 +271,7 @@ classify_http <- function(http) {
   "error"
 }
 
-#' Classify a transport condition onto the status enum
+#' Turn a failed connection into a status
 #'
 #' For a failure with no HTTP response at all. A DNS failure or a refused
 #' connection is an `error`; only an actual timeout is a `timeout`, because the

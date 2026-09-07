@@ -1,8 +1,8 @@
 ---
-title: "Writing a client against biohttp"
+title: "Writing a client with biohttp"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Writing a client against biohttp}
+  %\VignetteIndexEntry{Writing a client with biohttp}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

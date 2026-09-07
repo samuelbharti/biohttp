@@ -3,7 +3,7 @@
 # Everything a request needs before it goes out, in one place, so a client
 # author gets the policy for free rather than remembering it.
 
-#' Build an attributable User-Agent string
+#' Build a User-Agent that identifies your caller
 #'
 #' Public sources ask callers to identify themselves. A caller identity plus a
 #' contact route let a source operator reach you before they rate-limit you.

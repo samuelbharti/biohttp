@@ -63,8 +63,8 @@ The batched counterpart to \code{\link[=get_json]{get_json()}}. Assembles one re
 and caches the successes.
 }
 \details{
-Read the sections on \code{\link[=perform_many]{perform_many()}} first. The same two rules apply: pass
-requests for one host, and supply a \code{throttle}.
+Send requests for one host, and pass a \code{throttle}. \code{\link[=perform_many]{perform_many()}} explains
+both.
 }
 \examples{
 cache_reset()

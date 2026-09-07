@@ -68,8 +68,8 @@ branch on which wrapper it used.
 The keys are built exactly the way \code{\link[=get_text]{get_text()}} builds its own, so a batch
 reuses a file a single call already fetched and the other way around.
 
-Read the sections on \code{\link[=perform_many]{perform_many()}} first. The same two rules apply: pass
-requests for one host, and supply a \code{throttle}.
+Send requests for one host, and pass a \code{throttle}. \code{\link[=perform_many]{perform_many()}} explains
+both.
 }
 \examples{
 cache_reset()
