@@ -4,12 +4,17 @@
 \alias{cached}
 \title{Serve from cache, or fetch and cache a success}
 \usage{
-cached(key, fetch)
+cached(key, fetch, ttl = NULL)
 }
 \arguments{
 \item{key}{A key from \code{\link[=cache_key]{cache_key()}}.}
 
 \item{fetch}{A function of no arguments returning an envelope.}
+
+\item{ttl}{Seconds a stored success stays fresh. \code{NULL}, the default, means
+the configured lifetime from \code{BIOHTTP_CACHE_TTL}. Pass a longer one for a
+bulk file that should outlive the ordinary lookups around it. The disk
+tier's own \code{BIOHTTP_CACHE_DISK_TTL} still caps it.}
 }
 \value{
 The envelope, from the cache or from \code{fetch()}.
@@ -33,5 +38,9 @@ cached(key, function() status_ok(data = list(n = 1), source = "demo"))
 # A failure runs fetch() again every time.
 bad <- cache_key("demo", "GET /y")
 cached(bad, function() status_error(source = "demo"))
+
+# A bulk table that is worth keeping for a day.
+big <- cache_key("demo", "GET_TEXT /table.tsv")
+cached(big, function() status_ok(data = "a\tb\n"), ttl = 86400)
 
 }

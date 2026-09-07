@@ -247,6 +247,44 @@ test_that("get_json_many retries a 503 chunk through the public batch API", {
   cache_reset()
 })
 
+test_that("get_text_many retries a 503 the same way get_json_many does", {
+  # get_text_many was written on a branch that predates the retry work, so when
+  # the two were merged it was the one batch wrapper not passing max_tries
+  # down. Nothing caught that, because every other retry test goes through
+  # get_json_many or perform_many_with. This one keeps the text path honest.
+  breaker_reset()
+  ratelimit_reset()
+  cache_reset()
+  calls <- 0L
+  httr2::local_mocked_responses(function(req) {
+    calls <<- calls + 1L
+    if (calls < 2L) {
+      return(httr2::response(status_code = 503))
+    }
+    httr2::response(
+      status_code = 200,
+      headers = list(`content-type` = "text/plain"),
+      body = charToRaw(
+        "gene	score
+"
+      )
+    )
+  })
+
+  res <- get_text_many(
+    "https://mock.test",
+    "download",
+    list(list()),
+    source = "S",
+    max_tries = 3
+  )
+
+  expect_identical(res[[1]]$status, "ok")
+  expect_identical(calls, 2L)
+  ratelimit_reset()
+  cache_reset()
+})
+
 test_that("perform_many honors max_tries end to end, with a real tiny wait", {
   # No injected sleep here: this is the one test proving the public API
   # path (perform_many -> perform_many_with -> ratelimit_wait -> Sys.sleep)

@@ -275,8 +275,10 @@ cached_many <- function(
   progress,
   read_body,
   secret_query = NULL,
-  max_tries = 3
+  max_tries = 3,
+  ttl = NULL
 ) {
+  ttl <- check_ttl(ttl)
   hits <- lapply(keys, cache_get)
   miss <- which(vapply(hits, is.null, logical(1)))
   if (length(miss) == 0) {
@@ -309,7 +311,7 @@ cached_many <- function(
   for (j in seq_along(send)) {
     # Same rule as cached(): only a success is ever stored.
     if (isTRUE(fetched[[j]]$ok)) {
-      cache()$set(keys[[send[j]]], fetched[[j]])
+      cache_set(keys[[send[j]]], fetched[[j]], ttl)
     }
   }
   hits
@@ -337,6 +339,9 @@ cached_many <- function(
 #'   [perform_many()].
 #' @param headers A named list of headers, all marked sensitive.
 #' @param throttle A throttle spec. See [req_defaults()].
+#' @param ttl Seconds a cached success stays fresh, applied to every entry in
+#'   the batch. `NULL`, the default, means the configured lifetime from
+#'   `BIOHTTP_CACHE_TTL`. See [cached()].
 #'
 #' @return A list of envelopes, the same length and order as `queries`.
 #'
@@ -372,7 +377,8 @@ get_json_many <- function(
   throttle = NULL,
   max_active = 6,
   progress = FALSE,
-  secret_query = NULL
+  secret_query = NULL,
+  ttl = NULL
 ) {
   n <- length(queries)
   paths <- recycle_arg(path, n, "path")
@@ -395,7 +401,90 @@ get_json_many <- function(
     progress,
     read_json_body,
     secret_query,
-    max_tries = max_tries
+    max_tries = max_tries,
+    ttl
+  )
+}
+
+#' GET many text endpoints as one batch
+#'
+#' The batched counterpart to [get_text()], for a source that ships several
+#' flat files rather than one. Each body comes back verbatim as a string in
+#' `data`, so the envelope shape matches the single call and a caller does not
+#' branch on which wrapper it used.
+#'
+#' The keys are built exactly the way [get_text()] builds its own, so a batch
+#' reuses a file a single call already fetched and the other way around.
+#'
+#' Read the sections on [perform_many()] first. The same two rules apply: pass
+#' requests for one host, and supply a `throttle`.
+#'
+#' @inheritParams get_json_many
+#'
+#' @return A list of envelopes, the same length and order as `queries`, each
+#'   with a single string in `data` on success.
+#'
+#' @examples
+#' cache_reset()
+#' breaker_reset()
+#'
+#' httr2::with_mocked_responses(
+#'   function(req) {
+#'     httr2::response(
+#'       status_code = 200,
+#'       body = charToRaw("gene\tscore\n")
+#'     )
+#'   },
+#'   length(get_text_many(
+#'     "https://search.clinicalgenome.org",
+#'     path = c("kb/gene-validity/download", "kb/dosage/download"),
+#'     queries = list(list(), list()),
+#'     source = "ClinGen"
+#'   ))
+#' )
+#'
+#' @export
+get_text_many <- function(
+  base_url,
+  path = NULL,
+  queries = list(),
+  source = "API",
+  timeout = 30,
+  max_tries = 3,
+  headers = NULL,
+  throttle = NULL,
+  max_active = 6,
+  progress = FALSE,
+  secret_query = NULL,
+  ttl = NULL
+) {
+  n <- length(queries)
+  paths <- recycle_arg(path, n, "path")
+  reqs <- lapply(seq_len(n), function(i) {
+    req <- build_get(base_url, paths[[i]], queries[[i]])
+    req_defaults(req, timeout, max_tries, headers, throttle)
+  })
+  keys <- vapply(
+    reqs,
+    function(req) {
+      cache_key(
+        source,
+        paste0("GET_TEXT ", req$url),
+        list(headers = headers)
+      )
+    },
+    character(1)
+  )
+  cached_many(
+    keys,
+    reqs,
+    source,
+    max_active,
+    progress,
+    read_text_body,
+    secret_query,
+    max_tries = max_tries,
+    ttl
   )
 }
 
@@ -444,7 +533,8 @@ post_json_many <- function(
   throttle = NULL,
   max_active = 6,
   progress = FALSE,
-  secret_query = NULL
+  secret_query = NULL,
+  ttl = NULL
 ) {
   reqs <- lapply(bodies, function(body) {
     req <- httr2::req_body_json(httr2::request(url), body)
@@ -469,6 +559,7 @@ post_json_many <- function(
     progress,
     read_json_body,
     secret_query,
-    max_tries = max_tries
+    max_tries = max_tries,
+    ttl
   )
 }
