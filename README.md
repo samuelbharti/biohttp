@@ -148,7 +148,7 @@ pak::pak("samuelbharti/biohttp")
 
 # a tagged release rather than the tip of main. The tags are listed at
 # https://github.com/samuelbharti/biohttp/releases
-pak::pak("samuelbharti/biohttp@v0.1.1")
+pak::pak("samuelbharti/biohttp@v0.1.2")
 
 # or, without pak
 remotes::install_github("samuelbharti/biohttp")
