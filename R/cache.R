@@ -40,10 +40,11 @@ cache_store <- new.env(parent = emptyenv())
 # differently configured store.
 #
 # BIOHTTP_CACHE_SALT is deliberately absent: it changes cache keys, not the
-# object holding them, so it never requires a rebuild.
+# object holding them, so it never requires a rebuild. BIOHTTP_CACHE_TTL is
+# absent for the same reason: it is read at each store, not at build time. See
+# cache_set().
 cache_config <- function() {
   list(
-    ttl = env_num("BIOHTTP_CACHE_TTL", 1800),
     max_size = env_num("BIOHTTP_CACHE_MAX_SIZE", 256 * 1024^2),
     max_n = env_num("BIOHTTP_CACHE_MAX_N", Inf),
     disk = cache_disk_enabled(),
@@ -94,8 +95,15 @@ build_cache <- function() {
   # under while still accumulating far more entries than intended, so max_n
   # bounds the count separately. Its default is cachem's own Inf, so a caller
   # who does not set it sees no change.
+  #
+  # Age is deliberately NOT one of them. cachem's max_age is one number for the
+  # whole store, and a per-call ttl needs one number per entry, so expiry is
+  # carried inside each stored value instead and enforced on read by
+  # cache_get(). An entry past its time therefore sits in memory until it is
+  # read or evicted by the size or count ceiling, which is what those two
+  # ceilings are for.
   mem <- cachem::cache_mem(
-    max_age = env_num("BIOHTTP_CACHE_TTL", 1800),
+    max_age = Inf,
     max_size = env_num("BIOHTTP_CACHE_MAX_SIZE", 256 * 1024^2),
     max_n = env_num("BIOHTTP_CACHE_MAX_N", Inf),
     evict = "lru"
@@ -176,11 +184,68 @@ cache_reset <- function() {
   invisible(NULL)
 }
 
+# The clock, as a function so a test can move it rather than sleep through a
+# ttl.
+cache_now <- function() {
+  as.numeric(Sys.time())
+}
+
+# The lifetime an entry gets when the caller did not name one.
+cache_ttl_default <- function() {
+  env_num("BIOHTTP_CACHE_TTL", 1800)
+}
+
+# NULL means the configured default. Anything else has to be one positive
+# number of seconds, and a zero or a negative would store an entry that is
+# already a miss, which is a caller error worth naming.
+check_ttl <- function(ttl) {
+  if (is.null(ttl)) {
+    return(cache_ttl_default())
+  }
+  ok <- is.numeric(ttl) && length(ttl) == 1L && !is.na(ttl) && ttl > 0
+  if (!ok) {
+    stop(
+      "`ttl` must be NULL or a single positive number of seconds",
+      call. = FALSE
+    )
+  }
+  ttl
+}
+
+# Store a value with its own expiry.
+#
+# cachem 1.1.0 has no per-entry age: set() takes a key and a value, and max_age
+# is one number for the whole store. A bulk table that took a minute to
+# download has no business expiring on the same clock as a one-record lookup,
+# so the expiry rides inside the stored value and cache_get() checks it. The
+# disk tier keeps its own max_age as a hard ceiling on top of this.
+cache_set <- function(key, value, ttl = NULL) {
+  ttl <- check_ttl(ttl)
+  entry <- structure(
+    list(value = value, expires_at = cache_now() + ttl),
+    class = "biohttp_cache_entry"
+  )
+  cache()$set(key, entry)
+}
+
 # cache_layered's get() takes only `key` and returns cachem's key_missing
-# sentinel when absent, so normalize that to NULL.
+# sentinel when absent, so normalize that to NULL. An entry past its expiry is
+# a miss too, and is dropped so it stops taking up room. A value that was put
+# in by hand rather than through cache_set() has no expiry and passes through
+# as it is.
 cache_get <- function(key) {
   val <- cache()$get(key)
-  if (cachem::is.key_missing(val)) NULL else val
+  if (cachem::is.key_missing(val)) {
+    return(NULL)
+  }
+  if (!inherits(val, "biohttp_cache_entry")) {
+    return(val)
+  }
+  if (val$expires_at <= cache_now()) {
+    cache()$remove(key)
+    return(NULL)
+  }
+  val$value
 }
 
 #' Build a cache key
@@ -236,6 +301,10 @@ cache_key <- function(source, key, params = NULL) {
 #'
 #' @param key A key from [cache_key()].
 #' @param fetch A function of no arguments returning an envelope.
+#' @param ttl Seconds a stored success stays fresh. `NULL`, the default, means
+#'   the configured lifetime from `BIOHTTP_CACHE_TTL`. Pass a longer one for a
+#'   bulk file that should outlive the ordinary lookups around it. The disk
+#'   tier's own `BIOHTTP_CACHE_DISK_TTL` still caps it.
 #'
 #' @return The envelope, from the cache or from `fetch()`.
 #'
@@ -248,15 +317,20 @@ cache_key <- function(source, key, params = NULL) {
 #' bad <- cache_key("demo", "GET /y")
 #' cached(bad, function() status_error(source = "demo"))
 #'
+#' # A bulk table that is worth keeping for a day.
+#' big <- cache_key("demo", "GET_TEXT /table.tsv")
+#' cached(big, function() status_ok(data = "a\tb\n"), ttl = 86400)
+#'
 #' @export
-cached <- function(key, fetch) {
+cached <- function(key, fetch, ttl = NULL) {
+  ttl <- check_ttl(ttl)
   hit <- cache_get(key)
   if (!is.null(hit)) {
     return(hit)
   }
   res <- fetch()
   if (isTRUE(res$ok)) {
-    cache()$set(key, res)
+    cache_set(key, res, ttl)
   }
   res
 }

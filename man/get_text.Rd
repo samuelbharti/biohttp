@@ -13,7 +13,8 @@ get_text(
   max_tries = 3,
   headers = NULL,
   throttle = NULL,
-  secret_query = NULL
+  secret_query = NULL,
+  ttl = NULL
 )
 }
 \arguments{
@@ -37,6 +38,9 @@ get_text(
 that has no header form. Deliberately \strong{not} part of the cache key, so it
 suits a credential that raises a rate limit and not one that changes the
 response. See \code{\link[=redact_secrets]{redact_secrets()}}.}
+
+\item{ttl}{Seconds a cached success stays fresh. \code{NULL}, the default, means
+the configured lifetime from \code{BIOHTTP_CACHE_TTL}. See \code{\link[=cached]{cached()}}.}
 }
 \value{
 An envelope whose \code{data} is a single string on success.
@@ -48,7 +52,9 @@ per-record JSON API. Same timeout, retry, caching, and header redaction as
 }
 \details{
 The success-only cache means the file is fetched once per URL and every later
-lookup against it is served in process.
+lookup against it is served in process. A bulk table is usually worth keeping
+longer than a per-record answer, so pass a \code{ttl} when the configured default
+is too short for it.
 }
 \examples{
 cache_reset()

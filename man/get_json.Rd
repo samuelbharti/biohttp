@@ -13,7 +13,8 @@ get_json(
   max_tries = 3,
   headers = NULL,
   throttle = NULL,
-  secret_query = NULL
+  secret_query = NULL,
+  ttl = NULL
 )
 }
 \arguments{
@@ -37,6 +38,9 @@ get_json(
 that has no header form. Deliberately \strong{not} part of the cache key, so it
 suits a credential that raises a rate limit and not one that changes the
 response. See \code{\link[=redact_secrets]{redact_secrets()}}.}
+
+\item{ttl}{Seconds a cached success stays fresh. \code{NULL}, the default, means
+the configured lifetime from \code{BIOHTTP_CACHE_TTL}. See \code{\link[=cached]{cached()}}.}
 }
 \value{
 An envelope. See \code{\link[=envelope]{envelope()}}.

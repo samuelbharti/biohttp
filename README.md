@@ -44,9 +44,9 @@ is, and it never will.
 - **A success-only cache.** A failed call is never stored. Memory tier by
   default, opt-in disk tier that degrades to memory-only when the directory is
   not writable.
-- **Batched calls.** `get_json_many()` and `post_json_many()` ask many questions
-  of one source at once, in order, and only the entries the cache is missing
-  reach the network.
+- **Batched calls.** `get_json_many()`, `post_json_many()`, and
+  `get_text_many()` ask many questions of one source at once, in order, and
+  only the entries the cache is missing reach the network.
 - **Query-string credentials.** For a service like NCBI E-utilities that has no
   header form, `secret_query` attaches the key at dispatch, keeps it out of the
   cache key, and redacts it from error messages.
