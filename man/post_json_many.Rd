@@ -59,7 +59,8 @@ answering many queries. Keyed on the URL and the body together, so two
 different queries to the same endpoint do not collide.
 }
 \details{
-Read the sections on \code{\link[=perform_many]{perform_many()}} first.
+Send requests for one host, and pass a \code{throttle}. \code{\link[=perform_many]{perform_many()}} explains
+both.
 }
 \examples{
 cache_reset()

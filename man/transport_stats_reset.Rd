@@ -2,7 +2,7 @@
 % Please edit documentation in R/stats.R
 \name{transport_stats_reset}
 \alias{transport_stats_reset}
-\title{Clear all transport dispatch counters}
+\title{Clear the request counts}
 \usage{
 transport_stats_reset()
 }
@@ -10,7 +10,7 @@ transport_stats_reset()
 \code{NULL}, invisibly.
 }
 \description{
-Clear all transport dispatch counters
+Clear the request counts
 }
 \examples{
 transport_stats_reset()

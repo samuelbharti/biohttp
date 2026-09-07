@@ -2,7 +2,7 @@
 % Please edit documentation in R/envelope.R
 \name{classify_http}
 \alias{classify_http}
-\title{Classify an HTTP status code onto the status enum}
+\title{Turn an HTTP status code into a status}
 \usage{
 classify_http(http)
 }

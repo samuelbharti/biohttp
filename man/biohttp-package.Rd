@@ -18,16 +18,6 @@ build the request yourself, and pass it through \code{\link[=req_defaults]{req_d
 Every one of them returns an \code{\link[=envelope]{envelope()}} rather than raising, so a client
 branches on \code{res$status} and writes no \code{tryCatch()} of its own.
 }
-\section{On the jsonlite import}{
-
-\code{jsonlite} is imported but never called here, because httr2 calls it on this
-package's behalf: \code{httr2::resp_body_json()} does
-\code{check_installed("jsonlite")} at runtime, and httr2 keeps it in Suggests
-rather than Imports. Declaring it is what stops \code{get_json()} failing on a
-clean install. The import below is what makes that declaration honest to
-\verb{R CMD check}.
-}
-
 \seealso{
 Useful links:
 \itemize{

@@ -2,7 +2,7 @@
 % Please edit documentation in R/stats.R
 \name{transport_stats}
 \alias{transport_stats}
-\title{Per-host transport dispatch counts}
+\title{How many requests went out, per host}
 \usage{
 transport_stats()
 }

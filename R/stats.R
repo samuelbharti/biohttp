@@ -26,7 +26,7 @@ transport_stats_record <- function(
   invisible(transport_stats_env[[host]])
 }
 
-#' Per-host transport dispatch counts
+#' How many requests went out, per host
 #'
 #' How many requests the batched path (see [perform_many()] and its
 #' cached counterparts) actually sent, how many of those were a retry pass
@@ -65,7 +65,7 @@ transport_stats <- function() {
   do.call(rbind, rows)
 }
 
-#' Clear all transport dispatch counters
+#' Clear the request counts
 #'
 #' @return `NULL`, invisibly.
 #'

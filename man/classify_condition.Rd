@@ -2,7 +2,7 @@
 % Please edit documentation in R/envelope.R
 \name{classify_condition}
 \alias{classify_condition}
-\title{Classify a transport condition onto the status enum}
+\title{Turn a failed connection into a status}
 \usage{
 classify_condition(cond)
 }
