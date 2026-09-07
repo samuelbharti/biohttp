@@ -128,11 +128,15 @@ test_that("repeated 429s across retry passes never trip the breaker", {
 test_that("only the failed entries are redispatched, not the whole batch", {
   breaker_reset()
   ratelimit_reset()
-  seen <- character()
+  # We keep this in an environment instead of using `<<-`. lintr flags `<<-`,
+  # and it grabs whatever binding it happens to find up the stack. `tries`
+  # below already works this way.
+  record <- new.env()
+  record$seen <- character()
   tries <- new.env()
   httr2::local_mocked_responses(function(req) {
     path <- req$url
-    seen <<- c(seen, path)
+    record$seen <- c(record$seen, path)
     n <- (tries[[path]] %||% 0L) + 1L
     tries[[path]] <- n
     if (grepl("bad", path, fixed = TRUE) && n == 1L) {
@@ -158,9 +162,9 @@ test_that("only the failed entries are redispatched, not the whole batch", {
   )
 
   expect_true(all(vapply(res, function(r) r$status, character(1)) == "ok"))
-  expect_identical(sum(grepl("good1", seen, fixed = TRUE)), 1L)
-  expect_identical(sum(grepl("good2", seen, fixed = TRUE)), 1L)
-  expect_identical(sum(grepl("bad", seen, fixed = TRUE)), 2L)
+  expect_identical(sum(grepl("good1", record$seen, fixed = TRUE)), 1L)
+  expect_identical(sum(grepl("good2", record$seen, fixed = TRUE)), 1L)
+  expect_identical(sum(grepl("bad", record$seen, fixed = TRUE)), 2L)
   ratelimit_reset()
 })
 
