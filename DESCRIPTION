@@ -10,8 +10,7 @@ Authors@R: c(
     person("Carson", "Sievert", , "carson@posit.co", role = "ths",
            comment = c(ORCID = "0000-0002-4958-2844")),
     person("Posit Software, PBC", role = c("cph", "fnd"),
-           comment = c(ROR = "03wc8by49")),
-    person("Anthropic, PBC", role = "fnd")
+           comment = c(ROR = "03wc8by49"))
   )
 Description: Web service calls return a normalized result value instead of
     raising a condition, so a caller branches on data rather than on an error
