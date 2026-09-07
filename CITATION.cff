@@ -18,6 +18,12 @@ identifiers:
   - type: doi
     value: 10.5281/zenodo.21731865
     description: Version 0.1.0
+  - type: doi
+    value: 10.5281/zenodo.21737380
+    description: Version 0.1.1
+  - type: doi
+    value: 10.5281/zenodo.22635679
+    description: Version 0.1.2
 authors:
   - family-names: Bharti
     given-names: Samuel
