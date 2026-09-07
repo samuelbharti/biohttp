@@ -31,7 +31,7 @@ cannot drift apart and an application can replace all of them at once.
 
 Set \code{biohttp.status_message} to a function of \code{source}, \code{status}, \code{http} and
 \code{condition}. It is called instead of the built-in, and it is the way to keep
-an app's own voice, or to localise, while adopting the transport:
+an app's own voice, or to localize, while adopting the transport:
 
 \if{html}{\out{<div class="sourceCode r">}}\preformatted{options(biohttp.status_message = function(source, status, http, condition) \{
   if (identical(status, "timeout")) \{
@@ -56,11 +56,12 @@ precisely where the package promises never to raise.
 status_message("gnomAD", "no_data")
 status_message("gnomAD", "error", http = 503L)
 
-withr::with_options(
-  list(biohttp.status_message = function(source, status, http, condition) {
+old <- options(
+  biohttp.status_message = function(source, status, http, condition) {
     paste0(source, " says: ", status)
-  }),
-  status_message("gnomAD", "timeout")
+  }
 )
+status_message("gnomAD", "timeout")
+options(old)
 
 }

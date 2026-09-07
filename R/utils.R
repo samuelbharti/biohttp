@@ -71,6 +71,16 @@ env_num <- function(name, default) {
   if (length(val) != 1L || is.na(val) || val <= 0) default else val
 }
 
+# A non-blank string from an environment variable, else the default. Same rule
+# as env_num(): a blank setting is one nobody made. Sys.getenv()'s own default
+# argument does not do this, because it only fires when the name is absent, and
+# a deployment that exports a name with no value is common enough that the
+# difference matters.
+env_chr <- function(name, default) {
+  raw <- Sys.getenv(name, unset = "")
+  if (!nzchar(raw)) default else raw
+}
+
 # A logical from an environment variable. Anything not clearly true is false, so
 # an opt-in stays off unless it was asked for unambiguously.
 env_flag <- function(name, default = FALSE) {

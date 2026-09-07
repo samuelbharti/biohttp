@@ -197,7 +197,9 @@ test_that("a repeated query in one batch is a single request", {
 
 test_that("a repeated failing query is not cached by the dedupe path", {
   # Fanning one result out to several positions must not become a back door
-  # around the success-only rule.
+  # around the success-only rule. max_tries = 1 isolates dedupe from the
+  # retry pass (see test-parallel-retry.R), which would otherwise also
+  # multiply this URL's call count.
   breaker_reset()
   cache_reset()
   calls <- 0L
@@ -210,12 +212,19 @@ test_that("a repeated failing query is not cached by the dedupe path", {
     "https://mock.test",
     "query",
     list(list(q = "A"), list(q = "A")),
-    source = "S"
+    source = "S",
+    max_tries = 1
   )
   expect_identical(calls, 1L)
 
   # Nothing was stored, so asking again goes back out.
-  get_json_many("https://mock.test", "query", list(list(q = "A")), source = "S")
+  get_json_many(
+    "https://mock.test",
+    "query",
+    list(list(q = "A")),
+    source = "S",
+    max_tries = 1
+  )
   expect_identical(calls, 2L)
 })
 
@@ -266,7 +275,9 @@ test_that("a batch and a single call share cache entries both ways", {
 test_that("a failed entry in a batch is never cached", {
   # The single most important cache rule in the package, asserted for the
   # batched path too. A stored failure poisons itself for the life of the
-  # process.
+  # process. max_tries = 1 isolates the cache rule from the retry pass (see
+  # test-parallel-retry.R), which would otherwise also re-dispatch BAD
+  # within a single get_json_many() call.
   breaker_reset()
   cache_reset()
   calls <- 0L
@@ -279,11 +290,97 @@ test_that("a failed entry in a batch is never cached", {
   })
   queries <- list(list(q = "GOOD"), list(q = "BAD"))
 
-  get_json_many("https://mock.test", "query", queries, source = "S")
+  get_json_many(
+    "https://mock.test",
+    "query",
+    queries,
+    source = "S",
+    max_tries = 1
+  )
   expect_identical(calls, 2L)
 
   # The good one is warm, the failed one is retried.
-  get_json_many("https://mock.test", "query", queries, source = "S")
+  get_json_many(
+    "https://mock.test",
+    "query",
+    queries,
+    source = "S",
+    max_tries = 1
+  )
+  expect_identical(calls, 3L)
+})
+
+test_that("get_text_many fetches several flat files over a real socket", {
+  # Text bodies are the one thing a mocked response cannot prove: httr2's mock
+  # hands back whatever bytes it was given, so a real server is what shows the
+  # body reader reads the wire verbatim.
+  skip_if_not_installed("webfakes")
+  app <- webfakes::new_app()
+  app$get("/genes.tsv", function(req, res) {
+    res$set_type("text/tab-separated-values")$send("gene\tscore\nBRCA1\t1\n")
+  })
+  app$get("/dosage.csv", function(req, res) {
+    res$set_type("text/csv")$send("gene,copies\nTP53,2\n")
+  })
+  proc <- webfakes::new_app_process(app)
+  on.exit(try(proc$stop(), silent = TRUE), add = TRUE)
+  breaker_reset()
+  cache_reset()
+
+  res <- get_text_many(
+    proc$url(),
+    path = c("genes.tsv", "dosage.csv"),
+    queries = list(list(), list()),
+    source = "S",
+    timeout = 10
+  )
+
+  expect_length(res, 2)
+  expect_true(all(vapply(res, function(r) isTRUE(r$ok), logical(1))))
+  expect_identical(res[[1]]$data, "gene\tscore\nBRCA1\t1\n")
+  expect_identical(res[[2]]$data, "gene,copies\nTP53,2\n")
+})
+
+test_that("get_text_many and get_text share cache entries both ways", {
+  # Same rule as the JSON pair. A bulk file is the most expensive thing this
+  # package fetches, so a batch that could not see what a single call warmed
+  # would download it twice.
+  breaker_reset()
+  cache_reset()
+  calls <- 0L
+  httr2::local_mocked_responses(function(req) {
+    calls <<- calls + 1L
+    httr2::response(
+      status_code = 200,
+      body = charToRaw(paste0(basename(req$url), "\n"))
+    )
+  })
+
+  get_text("https://mock.test", path = "a.tsv", source = "S")
+  expect_identical(calls, 1L)
+
+  res <- get_text_many(
+    "https://mock.test",
+    path = c("a.tsv", "b.tsv"),
+    queries = list(list(), list()),
+    source = "S"
+  )
+  expect_identical(calls, 2L)
+  expect_identical(res[[1]]$data, "a.tsv\n")
+  expect_identical(res[[2]]$data, "b.tsv\n")
+
+  # Everything is warm now, from either entry point.
+  get_text("https://mock.test", path = "b.tsv", source = "S")
+  get_text_many(
+    "https://mock.test",
+    path = c("a.tsv", "b.tsv"),
+    queries = list(list(), list()),
+    source = "S"
+  )
+  expect_identical(calls, 2L)
+
+  # And the text keyspace stays separate from the JSON one for the same url.
+  get_json("https://mock.test", path = "a.tsv", source = "S")
   expect_identical(calls, 3L)
 })
 

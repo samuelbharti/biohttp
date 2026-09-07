@@ -2,13 +2,13 @@
 % Please edit documentation in R/request.R
 \name{user_agent}
 \alias{user_agent}
-\title{Build an attributable User-Agent string}
+\title{Build a User-Agent that identifies your caller}
 \usage{
 user_agent(
-  identity = Sys.getenv("BIOHTTP_CALLER_IDENTITY", "biohttp"),
+  identity = env_chr("BIOHTTP_CALLER_IDENTITY", "biohttp"),
   version = as.character(getNamespaceVersion("biohttp")),
-  url = Sys.getenv("BIOHTTP_CONTACT_URL", ""),
-  email = Sys.getenv("BIOHTTP_CONTACT_EMAIL", "")
+  url = env_chr("BIOHTTP_CONTACT_URL", ""),
+  email = env_chr("BIOHTTP_CONTACT_EMAIL", "")
 )
 }
 \arguments{

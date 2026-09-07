@@ -1,6 +1,7 @@
 # biohttp <img src="man/figures/logo.png" align="right" height="139" alt="" />
 
 <!-- badges: start -->
+[![CRAN status](https://www.r-pkg.org/badges/version/biohttp)](https://CRAN.R-project.org/package=biohttp)
 [![R-CMD-check](https://github.com/samuelbharti/biohttp/actions/workflows/r.yml/badge.svg)](https://github.com/samuelbharti/biohttp/actions/workflows/r.yml)
 [![r-universe](https://samuelbharti.r-universe.dev/badges/biohttp)](https://samuelbharti.r-universe.dev/biohttp)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21731864.svg)](https://doi.org/10.5281/zenodo.21731864)
@@ -8,10 +9,10 @@
 
 One HTTP transport layer for R clients of biological web services.
 
-> **Status:** 0.1.0, released. Install from
-> [r-universe](https://samuelbharti.r-universe.dev/biohttp), read the docs at
-> <https://www.samuelbharti.com/biohttp/>. The envelope contract is fixed from
-> here; changing it is a breaking change.
+> **Status:** on CRAN since 0.1.2. Docs at
+> <https://www.samuelbharti.com/biohttp/>, and the current version is in
+> `NEWS.md`. Every call returns the same shape, and that shape has not changed
+> since 0.1.0. Changing it would be a breaking change.
 
 ## Why
 
@@ -44,9 +45,9 @@ is, and it never will.
 - **A success-only cache.** A failed call is never stored. Memory tier by
   default, opt-in disk tier that degrades to memory-only when the directory is
   not writable.
-- **Batched calls.** `get_json_many()` and `post_json_many()` ask many questions
-  of one source at once, in order, and only the entries the cache is missing
-  reach the network.
+- **Batched calls.** `get_json_many()`, `post_json_many()`, and
+  `get_text_many()` ask many questions of one source at once, in order, and
+  only the entries the cache is missing reach the network.
 - **Query-string credentials.** For a service like NCBI E-utilities that has no
   header form, `secret_query` attaches the key at dispatch, keeps it out of the
   cache key, and redacts it from error messages.
@@ -66,10 +67,10 @@ is, and it never will.
 
 ## Dependencies
 
-`Imports` is `httr2`, `cachem`, `curl`, `jsonlite`, and `rlang`, and that is a
-hard constraint. Every downstream package and app inherits this list, so
-anything added here is added everywhere. A dependency that looks harmless in a
-transport layer becomes a transitive dependency of every application that
+`Imports` is `httr2`, `cachem`, `curl`, `jsonlite`, `rlang`, and `tools`, and
+that is a hard constraint. Every downstream package and app inherits this list,
+so anything added here is added everywhere. A dependency that looks harmless in
+a transport layer becomes a transitive dependency of every application that
 installs it, and of every container image those are built into.
 
 `jsonlite` is on the list for a reason worth knowing about. httr2 carries it in
@@ -83,6 +84,12 @@ package's main entry point. It costs nothing in practice: `shiny` imports
 directly, matching the encoder httr2 builds query strings with. It is already a
 hard `Imports` of httr2, so it adds nothing to what a consumer installs; it is
 named here because the package uses it rather than merely inheriting it.
+
+`tools` is declared because `cache_dir()` calls `tools::R_user_dir()` to place
+the disk cache. It ships with R itself, so it is absent from the table below and
+adds nothing to what a consumer installs; it is named for the same reason `curl`
+is, which is that `R CMD check` wants a declaration for anything reached with
+`::`.
 
 Resolved against CRAN on 2026-07-31, with `httr2` 1.3.0, `cachem` 1.1.0,
 `jsonlite` 2.0.0, and `rlang` 1.3.0:
@@ -111,7 +118,7 @@ Regenerate this list with:
 
 ```r
 deps <- tools::package_dependencies(
-  c("httr2", "cachem", "jsonlite", "rlang"),
+  c("httr2", "cachem", "curl", "jsonlite", "rlang", "tools"),
   which = c("Depends", "Imports", "LinkingTo"),
   recursive = TRUE
 )
@@ -121,7 +128,12 @@ setdiff(sort(unique(unlist(deps))), base)
 
 ## Installation
 
-From r-universe, which serves prebuilt binaries so there is nothing to compile:
+```r
+install.packages("biohttp")
+```
+
+Or from r-universe, which often has a newer build than CRAN and ships prebuilt
+binaries:
 
 ```r
 install.packages("biohttp", repos = "https://samuelbharti.r-universe.dev")
@@ -134,15 +146,16 @@ been released yet:
 # pak resolves dependencies properly and is the one to reach for
 pak::pak("samuelbharti/biohttp")
 
-# a tagged release rather than the tip of main
-pak::pak("samuelbharti/biohttp@v0.1.0")
+# a tagged release rather than the tip of main. The tags are listed at
+# https://github.com/samuelbharti/biohttp/releases
+pak::pak("samuelbharti/biohttp@v0.1.2")
 
 # or, without pak
 remotes::install_github("samuelbharti/biohttp")
 ```
 
 GitHub installs are built from source, so they need the usual R build tools.
-Prefer r-universe unless you specifically need an unreleased commit.
+Use CRAN unless you need something that has not been released yet.
 
 ## Roadmap
 
@@ -150,10 +163,11 @@ Prefer r-universe unless you specifically need an unreleased commit.
 | --- | --- |
 | 0. Scaffold | done |
 | 1. The transport, ported from a working implementation | done |
-| 2. Apply the envelope contract, write the vignette | done |
+| 2. One return shape for every call, write the vignette | done |
 | 2b. Batched calls and query-string credentials | done |
 | 3. Publish to r-universe, tag 0.1.0, pkgdown site live | done |
-| 4. First production migration onto the package | not started |
+| 4. First production migration onto the package | done |
+| 5. CRAN submission | done, 0.1.2 accepted 2026-09-03 |
 
 ## Using it
 
@@ -189,14 +203,25 @@ to the newest release:
 To pin the exact version you used, cite its own DOI instead. Version 0.1.0 is
 [10.5281/zenodo.21731865](https://doi.org/10.5281/zenodo.21731865).
 
-`CITATION.cff` carries the same metadata, so `citation("biohttp")` in R and the
-"Cite this repository" button on GitHub both work.
+The same metadata is written twice, because the two consumers read different
+files. `inst/CITATION` ships in the package, so `citation("biohttp")` works from
+an installed copy; `CITATION.cff` stays in the repository, so the "Cite this
+repository" button on GitHub works.
+
+## Acknowledgements
+
+Barret Schloerke and Carson Sievert advise this work as thesis advisors.
+Posit Software, PBC funds it and holds copyright together with the author. An
+additional gift from Anthropic, PBC supported the early stages and the planning of
+this work.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). The scope lines above are the first thing
-a pull request is checked against.
+See
+[CONTRIBUTING.md](https://github.com/samuelbharti/biohttp/blob/main/CONTRIBUTING.md).
+The scope lines above are the first thing a pull request is checked against.
 
 ## License
 
-MIT. See [LICENSE.md](LICENSE.md).
+MIT. See
+[LICENSE.md](https://github.com/samuelbharti/biohttp/blob/main/LICENSE.md).

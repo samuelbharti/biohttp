@@ -1,10 +1,18 @@
 Package: biohttp
 Title: Normalized HTTP Transport with Circuit Breaking and Caching
-Version: 0.1.1
-Authors@R:
+Version: 0.1.3
+Authors@R: c(
     person("Samuel", "Bharti", , "samuelbharti.io@gmail.com",
            role = c("aut", "cre", "cph"),
-           comment = c(ORCID = "0000-0003-4190-7058"))
+           comment = c(ORCID = "0000-0003-4190-7058")),
+    person("Barret", "Schloerke", , "barret@posit.co", role = "ths",
+           comment = c(ORCID = "0000-0001-9986-114X")),
+    person("Carson", "Sievert", , "carson@posit.co", role = "ths",
+           comment = c(ORCID = "0000-0002-4958-2844")),
+    person("Posit Software, PBC", role = c("cph", "fnd"),
+           comment = c(ROR = "03wc8by49")),
+    person("Anthropic, PBC", role = "fnd")
+  )
 Description: Web service calls return a normalized result value instead of
     raising a condition, so a caller branches on data rather than on an error
     handler. Transport failure, a non-success status code, and an unreadable
@@ -12,13 +20,15 @@ Description: Web service calls return a normalized result value instead of
     breaking, retry with a transient-failure predicate, optional throttling,
     redacted request headers, and a success-only cache come as defaults. Many
     questions to one source can be asked as a single batch, where only the
-    entries the cache is missing reach the network. Service specific knowledge
-    is left to the client packages built on top.
+    entries the cache is missing reach the network. Service-specific knowledge
+    is left to the client packages built on top. The circuit breaker is the
+    pattern described in Nygard (2018, ISBN:9781680502398).
 License: MIT + file LICENSE
 URL: https://github.com/samuelbharti/biohttp,
     https://www.samuelbharti.com/biohttp/
 BugReports: https://github.com/samuelbharti/biohttp/issues
 Encoding: UTF-8
+Language: en-US
 Roxygen: list(markdown = TRUE)
 Depends:
     R (>= 4.0)
@@ -27,7 +37,9 @@ Imports:
     curl,
     httr2,
     jsonlite,
-    rlang
+    rlang,
+    stats,
+    tools
 Suggests:
     knitr,
     rmarkdown,

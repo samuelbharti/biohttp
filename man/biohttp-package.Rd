@@ -8,7 +8,7 @@
 \description{
 \if{html}{\figure{logo.svg}{options: style='float: right' alt='logo' width='120'}}
 
-Web service calls return a normalized result value instead of raising a condition, so a caller branches on data rather than on an error handler. Transport failure, a non-success status code, and an unreadable response body are reported as three distinct outcomes. Per-host circuit breaking, retry with a transient-failure predicate, optional throttling, redacted request headers, and a success-only cache come as defaults. Many questions to one source can be asked as a single batch, where only the entries the cache is missing reach the network. Service specific knowledge is left to the client packages built on top.
+Web service calls return a normalized result value instead of raising a condition, so a caller branches on data rather than on an error handler. Transport failure, a non-success status code, and an unreadable response body are reported as three distinct outcomes. Per-host circuit breaking, retry with a transient-failure predicate, optional throttling, redacted request headers, and a success-only cache come as defaults. Many questions to one source can be asked as a single batch, where only the entries the cache is missing reach the network. Service-specific knowledge is left to the client packages built on top. The circuit breaker is the pattern described in Nygard (2018, ISBN:9781680502398).
 }
 \details{
 Start at \code{\link[=get_json]{get_json()}}, \code{\link[=post_json]{post_json()}}, or \code{\link[=get_text]{get_text()}} for a call that
@@ -18,16 +18,6 @@ build the request yourself, and pass it through \code{\link[=req_defaults]{req_d
 Every one of them returns an \code{\link[=envelope]{envelope()}} rather than raising, so a client
 branches on \code{res$status} and writes no \code{tryCatch()} of its own.
 }
-\section{On the jsonlite import}{
-
-\code{jsonlite} is imported but never called here, because httr2 calls it on this
-package's behalf: \code{httr2::resp_body_json()} does
-\code{check_installed("jsonlite")} at runtime, and httr2 keeps it in Suggests
-rather than Imports. Declaring it is what stops \code{get_json()} failing on a
-clean install. The import below is what makes that declaration honest to
-\verb{R CMD check}.
-}
-
 \seealso{
 Useful links:
 \itemize{
@@ -43,6 +33,14 @@ Useful links:
 Authors:
 \itemize{
   \item Samuel Bharti \email{samuelbharti.io@gmail.com} (\href{https://orcid.org/0000-0003-4190-7058}{ORCID}) [copyright holder]
+}
+
+Other contributors:
+\itemize{
+  \item Barret Schloerke \email{barret@posit.co} (\href{https://orcid.org/0000-0001-9986-114X}{ORCID}) [thesis advisor]
+  \item Carson Sievert \email{carson@posit.co} (\href{https://orcid.org/0000-0002-4958-2844}{ORCID}) [thesis advisor]
+  \item Posit Software, PBC (\href{https://ror.org/03wc8by49}{ROR}) [copyright holder, funder]
+  \item Anthropic, PBC [funder]
 }
 
 }

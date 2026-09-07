@@ -14,7 +14,8 @@ post_json_many(
   throttle = NULL,
   max_active = 6,
   progress = FALSE,
-  secret_query = NULL
+  secret_query = NULL,
+  ttl = NULL
 )
 }
 \arguments{
@@ -28,8 +29,10 @@ message. For example \code{"MyGene"}.}
 
 \item{timeout}{Seconds before a request is abandoned.}
 
-\item{max_tries}{Total attempts, including the first. Note that httr2 does
-not honor this under parallel performance.}
+\item{max_tries}{Total attempts, including the first. A retry pass
+re-sends only the entries that came back \code{rate_limited}, \code{timeout}, or
+a 5xx, honoring \code{Retry-After} between passes. See the retry section on
+\code{\link[=perform_many]{perform_many()}}.}
 
 \item{headers}{A named list of headers, all marked sensitive.}
 
@@ -42,6 +45,10 @@ default, because the usual caller is a Shiny app that renders its own.}
 
 \item{secret_query}{A named list of query-string credentials, applied to
 every request in the batch at dispatch. See \code{\link[=redact_secrets]{redact_secrets()}}.}
+
+\item{ttl}{Seconds a cached success stays fresh, applied to every entry in
+the batch. \code{NULL}, the default, means the configured lifetime from
+\code{BIOHTTP_CACHE_TTL}. See \code{\link[=cached]{cached()}}.}
 }
 \value{
 A list of envelopes, the same length and order as \code{bodies}.
@@ -52,7 +59,8 @@ answering many queries. Keyed on the URL and the body together, so two
 different queries to the same endpoint do not collide.
 }
 \details{
-Read the sections on \code{\link[=perform_many]{perform_many()}} first.
+Send requests for one host, and pass a \code{throttle}. \code{\link[=perform_many]{perform_many()}} explains
+both.
 }
 \examples{
 cache_reset()

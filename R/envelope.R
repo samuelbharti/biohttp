@@ -28,6 +28,9 @@
 #'
 #' @format A character vector of length seven.
 #'
+#' @docType data
+#' @keywords datasets
+#'
 #' @export
 STATUS_LEVELS <- c(
   "ok",
@@ -55,9 +58,13 @@ STATUS_LEVELS <- c(
 #' @param error One sentence fit to show a user. Never carries technical
 #'   detail.
 #' @param detail The technical cause, for a log. Never shown to a user.
+#' @param retry_after Seconds a `Retry-After` header asked the caller to
+#'   wait, or `NA_real_` when the response carried none. Diagnostic: nothing
+#'   in this package reads it back except the batched retry path in
+#'   `parallel.R`, which shares this same field.
 #'
 #' @return A list with `ok`, `status`, `http`, `data`, `source`, `error`,
-#'   `detail`, and `ts`.
+#'   `detail`, `retry_after`, and `ts`.
 #'
 #' @examples
 #' envelope("ok", data = list(symbol = "BRCA1"), source = "MyGene", http = 200L)
@@ -70,7 +77,8 @@ envelope <- function(
   source = "API",
   http = NA_integer_,
   error = NULL,
-  detail = NULL
+  detail = NULL,
+  retry_after = NA_real_
 ) {
   # Exact matching, not match.arg(). match.arg() partial-matches, so a typo like
   # envelope("t") silently becomes a timeout envelope and envelope("sk") a
@@ -94,6 +102,7 @@ envelope <- function(
     source = source,
     error = error,
     detail = detail,
+    retry_after = as.numeric(retry_after),
     ts = Sys.time()
   )
 }
@@ -144,13 +153,19 @@ status_stale <- function(data, source = "API", detail = NULL) {
 
 #' @rdname status_constructors
 #' @export
-status_rate_limited <- function(source = "API", http = 429L, detail = NULL) {
+status_rate_limited <- function(
+  source = "API",
+  http = 429L,
+  detail = NULL,
+  retry_after = NA_real_
+) {
   envelope(
     "rate_limited",
     source = source,
     http = http,
     error = status_message(source, "rate_limited", http = http),
-    detail = detail
+    detail = detail,
+    retry_after = retry_after
   )
 }
 
@@ -220,7 +235,7 @@ body_or_null <- function(res) {
   if (isTRUE(res$status %in% c("ok", "stale"))) res$data else NULL
 }
 
-#' Classify an HTTP status code onto the status enum
+#' Turn an HTTP status code into a status
 #'
 #' Only the codes the transport treats as an outcome in themselves are
 #' classified. A 2xx is the caller's to interpret, since a 200 carrying an empty
@@ -256,7 +271,7 @@ classify_http <- function(http) {
   "error"
 }
 
-#' Classify a transport condition onto the status enum
+#' Turn a failed connection into a status
 #'
 #' For a failure with no HTTP response at all. A DNS failure or a refused
 #' connection is an `error`; only an actual timeout is a `timeout`, because the

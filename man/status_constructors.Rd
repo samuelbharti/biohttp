@@ -17,7 +17,12 @@ status_no_data(source = "API", http = NA_integer_, detail = NULL)
 
 status_stale(data, source = "API", detail = NULL)
 
-status_rate_limited(source = "API", http = 429L, detail = NULL)
+status_rate_limited(
+  source = "API",
+  http = 429L,
+  detail = NULL,
+  retry_after = NA_real_
+)
 
 status_timeout(source = "API", detail = NULL)
 
@@ -34,6 +39,11 @@ message. For example \code{"gnomAD"}.}
 \item{http}{The HTTP status code, or \code{NA_integer_} when no response arrived.}
 
 \item{detail}{The technical cause, for a log. Never shown to a user.}
+
+\item{retry_after}{Seconds a \code{Retry-After} header asked the caller to
+wait, or \code{NA_real_} when the response carried none. Diagnostic: nothing
+in this package reads it back except the batched retry path in
+\code{parallel.R}, which shares this same field.}
 
 \item{error}{One sentence fit to show a user. Never carries technical
 detail.}

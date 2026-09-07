@@ -3,7 +3,7 @@
 # Everything a request needs before it goes out, in one place, so a client
 # author gets the policy for free rather than remembering it.
 
-#' Build an attributable User-Agent string
+#' Build a User-Agent that identifies your caller
 #'
 #' Public sources ask callers to identify themselves. A caller identity plus a
 #' contact route let a source operator reach you before they rate-limit you.
@@ -29,10 +29,10 @@
 #'
 #' @export
 user_agent <- function(
-  identity = Sys.getenv("BIOHTTP_CALLER_IDENTITY", "biohttp"),
+  identity = env_chr("BIOHTTP_CALLER_IDENTITY", "biohttp"),
   version = as.character(getNamespaceVersion("biohttp")),
-  url = Sys.getenv("BIOHTTP_CONTACT_URL", ""),
-  email = Sys.getenv("BIOHTTP_CONTACT_EMAIL", "")
+  url = env_chr("BIOHTTP_CONTACT_URL", ""),
+  email = env_chr("BIOHTTP_CONTACT_EMAIL", "")
 ) {
   parts <- c(
     if (nzchar(url)) paste0("+", url),

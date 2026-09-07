@@ -1,3 +1,113 @@
+# biohttp 0.1.3
+
+The batched path never retried anything, silently. `max_tries` was accepted
+by every batched entry point and did nothing once `req_perform_parallel()`
+was in play, because httr2 does not run its own retry policy there and
+nothing in this package replaced it. A rate-limited host got the same burst
+rate that just triggered the limit, `Retry-After` was read by no code path
+in the batched direction, and a run against a slow-to-recover source spent
+its whole retry budget on requests that never had a chance.
+
+## Added
+
+* A retry pass in the batched path (`perform_many()` and its cached
+  counterparts): after the first dispatch, only the requests that came back
+  `rate_limited`, `timeout`, or a 5xx are sent again, up to `max_tries`. A
+  settled answer is never retried.
+* `ratelimit_record()`, `ratelimit_wait()`, and `ratelimit_reset()`: a
+  per-host pause, separate from the circuit breaker, set from a 429 or
+  503's `Retry-After` (or a default when there is none) and honored before
+  the next dispatch to that host. `BIOHTTP_RATELIMIT_DEFAULT_PAUSE` sets
+  the fallback.
+* `transport_stats()` and `transport_stats_reset()`: per-host counts of
+  what the batched path actually dispatched, retried, and saw rate
+  limited, for a caller to check after a run rather than guess from
+  wall-clock time.
+* `envelope()` (and `status_rate_limited()`) gain a `retry_after` field,
+  read from the response's `Retry-After` header, `NA_real_` when there was
+  none.
+
+## Changed
+
+* `max_tries` on `get_json_many()` and `post_json_many()` now does what its
+  documentation always said it did. A caller relying on the old silent
+  behavior (every entry dispatched exactly once, regardless of the
+  setting) should pass `max_tries = 1` explicitly.
+* The breaker's rule is unchanged: a 429 still proves the host is
+  reachable and still clears its failure count. Pacing a rate-limited host
+  is the new ledger's job, not a reason to take the host out of rotation.
+
+# biohttp 0.1.2
+
+Preparation for a first CRAN submission. Everything here came out of reading the
+package the way a CRAN reviewer reads one, which is a different pass from the
+one that gets a suite green.
+
+## Changed
+
+* The disk cache defaults to `tools::R_user_dir("biohttp", "cache")` rather than
+  `data/cache`. The old default was a relative path, so it resolved against
+  whatever directory R was started in: a job run from two working directories
+  quietly kept two caches, and neither knew about the other. CRAN policy also
+  asks that a package write outside `tempdir()` only where a user expects it to,
+  and a directory appearing under the working directory is not that place. Only
+  a caller who had opted into the disk tier with `BIOHTTP_CACHE_DISK` is
+  affected, and setting `BIOHTTP_CACHE_DIR` still overrides it. An existing
+  `data/cache` is not migrated; it is a cache, so the cost of abandoning it is
+  one cold start.
+* `tools` joins `Imports` for that call. It ships with R, so it adds nothing to
+  what a consumer installs, and it is declared because `R CMD check` requires a
+  declaration for anything reached with `::`.
+* `DESCRIPTION` gains a reference for the circuit breaker, names the language as
+  `en-US`, and hyphenates "service-specific".
+
+## Fixed
+
+* Every environment variable the package reads now treats an empty export the
+  same way it treats an absent one. `Sys.getenv()`'s default argument only fires
+  when a name is absent, so a container passing through a variable its operator
+  never filled in got `""` rather than the default, and four readers were doing
+  that. `env_num()` and `env_flag()` had always had the rule; `env_chr()` gives
+  it to the rest.
+
+  The one that mattered was `BIOHTTP_CALLER_IDENTITY`. Exported empty, it sent
+  `User-Agent: biohttp/0.1.2` out as `/0.1.2`: a version with nothing in front
+  of it, which is the one thing a user agent exists to carry, on a package whose
+  point is being attributable to the service you are calling. Every test in the
+  suite ran that way, because `setup.R` clears those variables by exporting them
+  empty, and no test looked.
+
+  `BIOHTTP_CACHE_DIR` was the same defect with a smaller blast radius: `""` as a
+  directory is the working directory, which is what the change above removes.
+  `BIOHTTP_CONTACT_URL`, `BIOHTTP_CONTACT_EMAIL` and `BIOHTTP_CACHE_SALT` all
+  default to `""` anyway, so they read the same as before.
+* The `status_message()` example no longer calls `withr`, which is in
+  `Suggests`. An example may only use what `Imports` guarantees: CRAN checks
+  with `_R_CHECK_DEPENDS_ONLY_` set, where a `Suggests` package is simply absent
+  and the example errors. It now sets the option with `options()` and restores
+  it, which also satisfies the separate rule that an example puts back anything
+  it changes.
+
+## Added
+
+* `inst/CITATION` is shipped, so `citation("biohttp")` carries the Zenodo DOI
+  from an installed copy. `CITATION.cff` is in `.Rbuildignore` and never reached
+  a tarball, so the README had been promising something only a source checkout
+  could deliver. Both exist now, because GitHub's cite box reads the `.cff` and
+  R reads `inst/CITATION`.
+
+## Documentation
+
+* The README linked to `CONTRIBUTING.md` and `LICENSE.md` by relative path. Both
+  are in `.Rbuildignore`, so neither reaches a tarball and both links were dead
+  for anyone reading the README somewhere other than GitHub, which from here
+  includes the CRAN package page. They are absolute now.
+* The README's `Imports` list named five packages where `DESCRIPTION` names six.
+  A README that contradicts the `DESCRIPTION` printed beside it on the CRAN page
+  is worth more than the line it saves.
+* The status line no longer carries a version number. The last one went stale
+  within a release of being written, and `NEWS.md` already answers the question.
+
 # biohttp 0.1.1
 
 Everything here came out of the first real migration onto 0.1.0, which is where
@@ -22,7 +132,7 @@ a transport contract meets an app that already had its own opinions.
   set (#22).
 * `status_message()` produces every user-facing sentence in the package, and
   setting the `biohttp.status_message` option replaces them. That is how an app
-  keeps its own voice, or localises, while adopting the transport. Returning
+  keeps its own voice, or localizes, while adopting the transport. Returning
   anything other than a single non-empty string falls back to the built-in, so
   overriding one status and leaving the rest is the expected use. The override
   runs inside `tryCatch()`, because it sits on the failure path and the package
