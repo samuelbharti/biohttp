@@ -1,3 +1,42 @@
+# biohttp 0.1.3
+
+The batched path never retried anything, silently. `max_tries` was accepted
+by every batched entry point and did nothing once `req_perform_parallel()`
+was in play, because httr2 does not run its own retry policy there and
+nothing in this package replaced it. A rate-limited host got the same burst
+rate that just triggered the limit, `Retry-After` was read by no code path
+in the batched direction, and a run against a slow-to-recover source spent
+its whole retry budget on requests that never had a chance.
+
+## Added
+
+* A retry pass in the batched path (`perform_many()` and its cached
+  counterparts): after the first dispatch, only the requests that came back
+  `rate_limited`, `timeout`, or a 5xx are sent again, up to `max_tries`. A
+  settled answer is never retried.
+* `ratelimit_record()`, `ratelimit_wait()`, and `ratelimit_reset()`: a
+  per-host pause, separate from the circuit breaker, set from a 429 or
+  503's `Retry-After` (or a default when there is none) and honored before
+  the next dispatch to that host. `BIOHTTP_RATELIMIT_DEFAULT_PAUSE` sets
+  the fallback.
+* `transport_stats()` and `transport_stats_reset()`: per-host counts of
+  what the batched path actually dispatched, retried, and saw rate
+  limited, for a caller to check after a run rather than guess from
+  wall-clock time.
+* `envelope()` (and `status_rate_limited()`) gain a `retry_after` field,
+  read from the response's `Retry-After` header, `NA_real_` when there was
+  none.
+
+## Changed
+
+* `max_tries` on `get_json_many()` and `post_json_many()` now does what its
+  documentation always said it did. A caller relying on the old silent
+  behavior (every entry dispatched exactly once, regardless of the
+  setting) should pass `max_tries = 1` explicitly.
+* The breaker's rule is unchanged: a 429 still proves the host is
+  reachable and still clears its failure count. Pacing a rate-limited host
+  is the new ledger's job, not a reason to take the host out of rotation.
+
 # biohttp 0.1.2
 
 Preparation for a first CRAN submission. Everything here came out of reading the

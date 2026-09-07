@@ -9,7 +9,7 @@ abstract: >-
   retry, throttling, header redaction, and a success-only cache are provided
   as defaults.
 type: software
-version: 0.1.2
+version: 0.1.3
 date-released: "2026-08-06"
 # The concept DOI, which always resolves to the newest release. Cite this one
 # unless you specifically need to pin the version you used.

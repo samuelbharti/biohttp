@@ -18,14 +18,19 @@
 # package shipped with every R installation, so declaring it adds nothing to
 # what a consumer installs; the same argument as curl, and it is named for the
 # same reason: R CMD check wants a declaration for anything reached with `::`.
-test_that("Imports stays at cachem, curl, httr2, jsonlite, rlang, and tools", {
+#
+# stats is on the list for the batched retry's backoff jitter
+# (stats::runif() in parallel.R). Same argument as tools: a base-priority
+# package, on every R installation, declared only because it is reached
+# with `::`.
+test_that("Imports stays at cachem, curl, httr2, jsonlite, rlang, stats, and tools", {
   desc <- system.file("DESCRIPTION", package = "biohttp")
   imports <- read.dcf(desc, "Imports")[[1]]
   declared <- trimws(strsplit(imports, ",")[[1]])
 
   expect_setequal(
     declared,
-    c("cachem", "curl", "httr2", "jsonlite", "rlang", "tools")
+    c("cachem", "curl", "httr2", "jsonlite", "rlang", "stats", "tools")
   )
 })
 

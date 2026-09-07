@@ -9,7 +9,8 @@ perform_many(
   source = "API",
   max_active = 6,
   progress = FALSE,
-  secret_query = NULL
+  secret_query = NULL,
+  max_tries = 3
 )
 }
 \arguments{
@@ -25,6 +26,9 @@ default, because the usual caller is a Shiny app that renders its own.}
 
 \item{secret_query}{A named list of query-string credentials, applied to
 every request in the batch at dispatch. See \code{\link[=redact_secrets]{redact_secrets()}}.}
+
+\item{max_tries}{Total attempts per host group, including the first.
+\code{1} disables the retry pass entirely.}
 }
 \value{
 A list of envelopes, the same length and order as \code{reqs}. See
@@ -67,6 +71,18 @@ requests comes back \code{skipped}. But once a batch is in flight, a failure on 
 first request cannot short-circuit the rest, because they have already been
 sent. Transport failures within a batch are recorded, so they take effect on
 the next call rather than the current one.
+}
+
+\section{Retry over failed indices, not the whole batch}{
+
+httr2 documents \code{req_retry()} as not firing under \code{req_perform_parallel()},
+so this function drives its own: a pass after the first re-sends only the
+requests that came back \code{rate_limited}, \code{timeout}, or a 5xx. A settled
+answer (\code{ok}, \code{no_data}, any other 4xx) is never retried. Before a retry
+pass, the host's recorded pause is honored (see \code{\link[=ratelimit_wait]{ratelimit_wait()}}), set
+from that pass's \code{Retry-After} when a 429 or 503 sent one, or an
+exponential backoff otherwise. See \code{\link[=transport_stats]{transport_stats()}} to see what a call
+actually dispatched.
 }
 
 \examples{
