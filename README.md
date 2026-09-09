@@ -14,6 +14,34 @@ One HTTP transport layer for R clients of biological web services.
 > `NEWS.md`. Every call returns the same shape, and that shape has not changed
 > since 0.1.0. Changing it would be a breaking change.
 
+## Installation
+
+```r
+install.packages("biohttp")
+```
+
+Or from r-universe, which often has a newer build than CRAN and ships prebuilt
+binaries:
+
+```r
+install.packages("biohttp", repos = "https://samuelbharti.r-universe.dev")
+```
+
+Or straight from GitHub, if you want a specific commit or a branch that has not
+been released yet:
+
+```r
+# pak resolves dependencies properly and is the one to reach for
+pak::pak("samuelbharti/biohttp")
+
+# a tagged release rather than the tip of main. The tags are listed at
+# https://github.com/samuelbharti/biohttp/releases
+pak::pak("samuelbharti/biohttp@v0.1.2")
+```
+
+GitHub installs are built from source, so they need the usual R build tools.
+Use CRAN unless you need something that has not been released yet.
+
 ## Why
 
 An app that talks to a biological web service usually grows its own HTTP layer,
@@ -125,37 +153,6 @@ deps <- tools::package_dependencies(
 base <- rownames(installed.packages(priority = "base"))
 setdiff(sort(unique(unlist(deps))), base)
 ```
-
-## Installation
-
-```r
-install.packages("biohttp")
-```
-
-Or from r-universe, which often has a newer build than CRAN and ships prebuilt
-binaries:
-
-```r
-install.packages("biohttp", repos = "https://samuelbharti.r-universe.dev")
-```
-
-Or straight from GitHub, if you want a specific commit or a branch that has not
-been released yet:
-
-```r
-# pak resolves dependencies properly and is the one to reach for
-pak::pak("samuelbharti/biohttp")
-
-# a tagged release rather than the tip of main. The tags are listed at
-# https://github.com/samuelbharti/biohttp/releases
-pak::pak("samuelbharti/biohttp@v0.1.2")
-
-# or, without pak
-remotes::install_github("samuelbharti/biohttp")
-```
-
-GitHub installs are built from source, so they need the usual R build tools.
-Use CRAN unless you need something that has not been released yet.
 
 ## Roadmap
 
