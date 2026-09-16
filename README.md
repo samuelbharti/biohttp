@@ -112,57 +112,20 @@ hard `Imports` of httr2, so it adds nothing to what a consumer installs; it is
 named here because the package uses it rather than merely inheriting it.
 
 `tools` is declared because `cache_dir()` calls `tools::R_user_dir()` to place
-the disk cache. It ships with R itself, so it is absent from the table below and
-adds nothing to what a consumer installs; it is named for the same reason `curl`
-is, which is that `R CMD check` wants a declaration for anything reached with
-`::`.
+the disk cache. It ships with R itself, so it adds nothing to what a consumer
+installs; it is named for the same reason `curl` is, which is that `R CMD check`
+wants a declaration for anything reached with `::`.
 
-Resolved against CRAN on 2026-07-31, with `httr2` 1.3.0, `cachem` 1.1.0,
-`jsonlite` 2.0.0, and `rlang` 1.3.0:
-
-| Declared | Brings in directly |
-| --- | --- |
-| `httr2` | `cli`, `curl`, `glue`, `lifecycle`, `magrittr`, `openssl`, `R6`, `rlang`, `vctrs`, `withr` |
-| `cachem` | `fastmap`, `rlang` |
-| `jsonlite` | nothing outside base R |
-| `rlang` | nothing outside base R |
-
-The full recursive set is 14 non-base packages: `askpass`, `cli`, `curl`,
-`fastmap`, `glue`, `jsonlite`, `lifecycle`, `magrittr`, `openssl`, `R6`,
-`rlang`, `sys`, `vctrs`, `withr`. `askpass` and `sys` arrive under `openssl`.
-
-### No compiled code
-
-The package is pure R. There is no `src/`, and there will not be. That was
-evaluated rather than assumed: measured against the live MyGene API, a call
-spends about 210 ms on the network and 0.2 ms parsing the response, so parsing
-is roughly one tenth of one percent of the work. A faster native parser, in any
-language, would be optimizing the wrong end of a call that is waiting on
-somebody else's server.
-
-Regenerate this list with:
+For the set a consumer actually installs, ask rather than trust a table written
+once:
 
 ```r
-deps <- tools::package_dependencies(
-  c("httr2", "cachem", "curl", "jsonlite", "rlang", "tools"),
-  which = c("Depends", "Imports", "LinkingTo"),
-  recursive = TRUE
-)
-base <- rownames(installed.packages(priority = "base"))
-setdiff(sort(unique(unlist(deps))), base)
+pak::pkg_deps("biohttp")
 ```
 
-## Roadmap
-
-| Phase | State |
-| --- | --- |
-| 0. Scaffold | done |
-| 1. The transport, ported from a working implementation | done |
-| 2. One return shape for every call, write the vignette | done |
-| 2b. Batched calls and query-string credentials | done |
-| 3. Publish to r-universe, tag 0.1.0, pkgdown site live | done |
-| 4. First production migration onto the package | done |
-| 5. CRAN submission | done, 0.1.2 accepted 2026-09-03 |
+The package is pure R. There is no `src/`, and there will not be, because a call
+spends its time waiting on somebody else's server rather than parsing the reply.
+`CONTRIBUTING.md` has the measurement.
 
 ## Using it
 
@@ -195,13 +158,12 @@ to the newest release:
 > Bharti, S. (2026). *biohttp: Normalized HTTP Transport with Circuit Breaking
 > and Caching*. Zenodo. <https://doi.org/10.5281/zenodo.21731864>
 
-To pin the exact version you used, cite its own DOI instead. Version 0.1.0 is
-[10.5281/zenodo.21731865](https://doi.org/10.5281/zenodo.21731865).
+To pin the exact version you used, take its own DOI from `CITATION.cff`, which
+carries one identifier per archived release.
 
-The same metadata is written twice, because the two consumers read different
-files. `inst/CITATION` ships in the package, so `citation("biohttp")` works from
-an installed copy; `CITATION.cff` stays in the repository, so the "Cite this
-repository" button on GitHub works.
+`inst/CITATION` ships in the package, so `citation("biohttp")` works from an
+installed copy, and `CITATION.cff` stays in the repository for the "Cite this
+repository" button on GitHub.
 
 ## Contributing
 
