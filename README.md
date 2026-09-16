@@ -1,10 +1,11 @@
 # biohttp <img src="man/figures/logo.png" align="right" height="139" alt="" />
 
 <!-- badges: start -->
+[![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
 [![CRAN status](https://www.r-pkg.org/badges/version/biohttp)](https://CRAN.R-project.org/package=biohttp)
 [![R-CMD-check](https://github.com/samuelbharti/biohttp/actions/workflows/r.yml/badge.svg)](https://github.com/samuelbharti/biohttp/actions/workflows/r.yml)
 [![r-universe](https://samuelbharti.r-universe.dev/badges/biohttp)](https://samuelbharti.r-universe.dev/biohttp)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21731864.svg)](https://doi.org/10.5281/zenodo.21731864)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.21731864-1682D4)](https://doi.org/10.5281/zenodo.21731864)
 <!-- badges: end -->
 
 One HTTP transport layer for R clients of biological web services.
