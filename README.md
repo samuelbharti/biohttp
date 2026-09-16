@@ -10,10 +10,7 @@
 
 One HTTP transport layer for R clients of biological web services.
 
-> **Status:** on CRAN since 0.1.2. Docs at
-> <https://www.samuelbharti.com/biohttp/>, and the current version is in
-> `NEWS.md`. Every call returns the same shape, and that shape has not changed
-> since 0.1.0. Changing it would be a breaking change.
+Documentation is at <https://www.samuelbharti.com/biohttp/>.
 
 ## Installation
 
