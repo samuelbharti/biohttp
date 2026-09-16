@@ -56,7 +56,7 @@ biohttp is that layer written once and installed rather than copied. It knows
 how to make an HTTP call and report what happened. It does not know what a gene
 is, and it never will.
 
-## What it does
+## Features
 
 - **A call returns a value, never a condition.** Transport failure, a non-success
   status code, and a 2xx with an unreadable body are three distinct outcomes the
@@ -78,7 +78,7 @@ is, and it never will.
   header form, `secret_query` attaches the key at dispatch, keeps it out of the
   cache key, and redacts it from error messages.
 
-## What it does not do
+## Scope
 
 - No Shiny. Not in Imports, not in Suggests, not in tests.
 - No service-specific knowledge. Nothing here knows what a gene is. That belongs
@@ -127,7 +127,7 @@ The package is pure R. There is no `src/`, and there will not be, because a call
 spends its time waiting on somebody else's server rather than parsing the reply.
 `CONTRIBUTING.md` has the measurement.
 
-## Using it
+## Usage
 
 `vignette("biohttp")` is the guide for client authors. The short version:
 
@@ -150,7 +150,7 @@ switch(res$status,
 There is no `tryCatch()` in that, and there does not need to be. A DNS failure,
 a 503, and a 200 carrying an HTML maintenance page all come back as values.
 
-## Citing biohttp
+## Citation
 
 Each release is archived on Zenodo. Use the concept DOI, which always resolves
 to the newest release:
