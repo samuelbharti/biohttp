@@ -40,7 +40,7 @@ pak::pak("samuelbharti/biohttp@v0.1.2")
 GitHub installs are built from source, so they need the usual R build tools.
 Use CRAN unless you need something that has not been released yet.
 
-## Why
+## Motivation
 
 An app that talks to a biological web service usually grows its own HTTP layer,
 and the next app starts by copying it. The copies then drift. One returns a
